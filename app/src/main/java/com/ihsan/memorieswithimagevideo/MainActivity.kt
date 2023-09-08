@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
     private suspend fun showNextImage() {
         if (imageUris.isNotEmpty()) {
             currentImageIndex = (currentImageIndex + 1) % imageUris.size
-            transitionWithMoveWithInitialZoom()
+            transitionWithScaleUpWithMove()
             /*
             val animations = listOf("1", "2", "3", "4", "5", "6", "7")
             when (animations[i++ % animations.size]) {
@@ -141,6 +141,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }*/
         }
+    }
+
+    private fun nextImageUri(): Uri {
+        return imageUris[++currentImageIndex % imageUris.size]
     }
 
     private suspend fun transitionWithScaleUpV2() {
@@ -296,6 +300,7 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun transitionWithScaleUpWithMove() {
         val currentImageUri = imageUris[currentImageIndex]
+        val nextImageUri=nextImageUri()
         val screenWidth = resources.displayMetrics.widthPixels.toFloat()
         // Start the animation to fade out previousImageView
         coroutineScope.launch {
@@ -316,6 +321,26 @@ class MainActivity : AppCompatActivity() {
             // show current image
             coverImageView.alpha = 0f
             currentImageView.animate().scaleX(2f).scaleY(2f).translationX(-screenWidth/2.2f)
+                .setDuration(animationDuration).start()
+            delay(animationDuration)
+
+            coverImageView.setImageURI(nextImageUri)
+            coverImageView.scaleX = 2f
+            coverImageView.scaleY = 2f
+            coverImageView.translationX=screenWidth/2.2f
+            coverImageView.animate().alpha(  1f).setDuration(animationDuration).start()
+            Toast.makeText(this@MainActivity, "transition", Toast.LENGTH_SHORT).show()
+            delay(animationDuration)
+
+            currentImageView.setImageURI(nextImageUri)
+
+            //reset cover shape
+            coverImageView.alpha = 0f
+            /*coverImageView.scaleX = 1f
+            coverImageView.scaleY = 1f*/
+            coverImageView.translationX=0f
+
+            currentImageView.animate().scaleX(1f).scaleY(1f).translationX(0f)
                 .setDuration(animationDuration).start()
             delay(animationDuration)
 
