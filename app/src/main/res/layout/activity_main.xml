@@ -5,68 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
-    <androidx.cardview.widget.CardView
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_container"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="70dp"
-        app:cardCornerRadius="20dp">
-
-        <ImageView
-            android:id="@+id/currentImageView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="1.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-
-        <ImageView
-            android:id="@+id/coverImageView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-
-        <ImageView
-            android:id="@+id/collegeImageView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-        <ImageView
-            android:id="@+id/collegeImageView_1"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-        <ImageView
-            android:id="@+id/collegeImageView_2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-        <ImageView
-            android:id="@+id/collegeImageView_3"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-    </androidx.cardview.widget.CardView>
-
-    <Button
-        android:id="@+id/pickImageButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="10dp"
-        android:text="Pick Image" />
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/navigation_graph" />
 
 </RelativeLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_graph"
+    app:startDestination="@id/imageViewMemoriesFragment">
+
+    <fragment
+        android:id="@+id/imageViewMemoriesFragment"
+        android:name="com.ihsan.memorieswithimagevideo.fragments.ImageViewMemoriesFragment"
+        android:label="fragment_image_view_memories"
+        tools:layout="@layout/fragment_image_view_memories" />
+</navigation>
