@@ -5,6 +5,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.ihsan.memorieswithimagevideo.fragments.ImageMemoryFragment
+import com.ihsan.memorieswithimagevideo.fragments.VideoMemoryFragment
 
 class ViewPagerAdapter(manager: FragmentManager, lifecycle: Lifecycle) :
     FragmentStateAdapter(manager, lifecycle) {
@@ -12,6 +13,7 @@ class ViewPagerAdapter(manager: FragmentManager, lifecycle: Lifecycle) :
     companion object {
         val fragmentList = listOf(
             ImageMemoryFragment(),
+            VideoMemoryFragment()
         )
     }
 

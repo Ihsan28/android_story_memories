@@ -9,9 +9,9 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="70dp"
+        android:layout_marginHorizontal="1dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="60dp"
         app:cardCornerRadius="20dp">
 
         <ImageView
@@ -19,14 +19,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="1.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-
-        <ImageView
-            android:id="@+id/coverImageView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.0"
             android:scaleType="centerCrop"
             app:shapeAppearanceOverlay="@style/RoundedCorners" />
 
@@ -56,6 +48,14 @@
 
         <ImageView
             android:id="@+id/collegeImageView_3"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.0"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+        <!--Cover of all images-->
+        <ImageView
+            android:id="@+id/coverImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"

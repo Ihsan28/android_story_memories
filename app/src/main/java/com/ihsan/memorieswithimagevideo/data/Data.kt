@@ -7,9 +7,13 @@ import kotlinx.coroutines.Dispatchers
 class Data {
     companion object {
         val coroutineScope = CoroutineScope(Dispatchers.Main)
-        var imageUris = mutableListOf<Uri>()
-        var currentImageIndex = 0
+        var contentUris = mutableListOf<Uri>()
+        var currentIndex = 0
 
-        const val animationDuration = 3000L
+        var animationDuration = 3000L
+
+        //Assigned in MainActivity
+        var screenWidth = 0f
+        var screenHeight = 0f
     }
 }

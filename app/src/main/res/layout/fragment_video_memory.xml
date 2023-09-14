@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragments.VideoMemoryFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_marginHorizontal="1dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="60dp"
+        app:cardCornerRadius="20dp">
 
-</FrameLayout>
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>
