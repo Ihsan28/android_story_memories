@@ -11,9 +11,9 @@
         android:layout_height="match_parent"
         android:layout_marginHorizontal="1dp"
         android:layout_marginTop="1dp"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="1dp"
         app:cardCornerRadius="20dp">
-
+        <!--current ImageView-->
         <ImageView
             android:id="@+id/currentImageView"
             android:layout_width="match_parent"

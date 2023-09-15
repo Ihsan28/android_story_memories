@@ -62,7 +62,7 @@ class ImageMemoryFragment : Fragment() {
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
             when (animations[i++ % animations.size]) {
                 "1" -> {
-                    Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
                     transitionWithCollage()
                 }
 
@@ -565,5 +565,4 @@ class ImageMemoryFragment : Fragment() {
             }
             .start()
     }
-
 }

@@ -26,5 +26,6 @@ class VideoMemoryFragment : Fragment() {
 
         videoView = view.findViewById(R.id.videoView)
         videoView.setVideoURI(contentUris[currentIndex])
+        videoView.start()
     }
 }

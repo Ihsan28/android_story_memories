@@ -9,5 +9,18 @@
         android:id="@+id/memoriesFragment"
         android:name="com.ihsan.memorieswithimagevideo.fragments.MemoriesFragment"
         android:label="fragment_memories"
-        tools:layout="@layout/fragment_memories" />
+        tools:layout="@layout/fragment_memories" >
+        <action
+            android:id="@+id/action_memoriesFragment_to_editSelectedFragment"
+            app:destination="@id/editSelectedFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/editSelectedFragment"
+        android:name="com.ihsan.memorieswithimagevideo.fragments.EditSelectedFragment"
+        android:label="fragment_edit_selected"
+        tools:layout="@layout/fragment_edit_selected" >
+        <action
+            android:id="@+id/action_editSelectedFragment_to_memoriesFragment"
+            app:destination="@id/memoriesFragment" />
+    </fragment>
 </navigation>

@@ -23,6 +23,8 @@ class MemoriesFragment : Fragment() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private lateinit var viewPager2: ViewPager2
     private lateinit var pickImageButton: Button
+    private lateinit var editButton: Button
+    private lateinit var exportButton: Button
 
     //pick image launcher contract for image picker intent
     private val pickImageContract =
@@ -74,9 +76,28 @@ class MemoriesFragment : Fragment() {
         viewPager2 = view.findViewById(R.id.viewPager2)
         viewPager2.setPageTransformer(CustomPageTransformer())
 
+        editButton = view.findViewById(R.id.edit)
+        exportButton = view.findViewById(R.id.export)
         pickImageButton = view.findViewById(R.id.pickImageButton)
+
         pickImageButton.setOnClickListener {
             pickImages()
+        }
+
+        editButton.setOnClickListener {
+            val fragment = EditSelectedFragment()
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.fragment_container, fragment)
+            transaction.addToBackStack(null)
+            transaction.commit()
+        }
+
+        exportButton.setOnClickListener {
+            val fragment = VideoMemoryFragment()
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.fragment_container, fragment)
+            transaction.addToBackStack(null)
+            transaction.commit()
         }
     }
 
