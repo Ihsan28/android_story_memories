@@ -1,9 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- mini_preview_item.xml -->
-<ImageView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/thumbnailImageView"
-    android:layout_width="72dp"
-    android:layout_height="72dp"
-    android:layout_gravity="center"
-    android:scaleType="centerCrop" />
+<?xml version="1.0" encoding="utf-8"?><!-- mini_preview_item.xml -->
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="3dp">
+
+    <ImageView
+        android:id="@+id/thumbnailImageView"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="center"
+        android:scaleType="centerCrop" />
+</androidx.cardview.widget.CardView>

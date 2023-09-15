@@ -15,6 +15,7 @@ import com.ihsan.memorieswithimagevideo.adapter.GalleryAdapter
 import com.ihsan.memorieswithimagevideo.adapter.MiniPreviewAdapter
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
+import com.ihsan.memorieswithimagevideo.data.MediaType
 
 class EditSelectedFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
@@ -44,7 +45,15 @@ class EditSelectedFragment : Fragment() {
         val removeButton = view.findViewById<Button>(R.id.removeButton)
 
         miniPreviewRecyclerView = view.findViewById(R.id.miniPreviewRecyclerView)
-        val miniPreviewAdapter = MiniPreviewAdapter(contentUris)
+
+        val miniPreviewAdapter = MiniPreviewAdapter(contentUris.map {
+            val ext=it.toString().substring(it.toString().lastIndexOf(".")+1)
+            if(ext=="mp4"){
+                Pair(it, MediaType.VIDEO)
+            }else{
+                Pair(it,MediaType.IMAGE)
+            }
+        })
         val layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         miniPreviewRecyclerView.layoutManager = layoutManager
