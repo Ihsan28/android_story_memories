@@ -6,12 +6,11 @@ import kotlinx.coroutines.Dispatchers
 
 class Data {
     companion object {
-        val coroutineScope = CoroutineScope(Dispatchers.Main)
         var contentUris = mutableListOf<Uri>()
         var currentIndex = 0
 
         var animationDuration = 3000L
-        var coverRevealDuration=500L
+        var coverRevealDuration=1000L
 
         //Assigned in MainActivity
         var screenWidth = 0f

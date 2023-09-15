@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
@@ -20,7 +21,6 @@ import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
 import jp.wasabeef.transformers.glide.BlurTransformation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ImageMemoryFragment : Fragment() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
@@ -51,9 +51,7 @@ class ImageMemoryFragment : Fragment() {
         collageImageView_2 = view.findViewById(R.id.collegeImageView_2)
         collageImageView_3 = view.findViewById(R.id.collegeImageView_3)
 
-        coroutineScope.launch {
-            showNextImage()
-        }
+        showNextImage()
     }
 
     var i = 0;
@@ -61,15 +59,11 @@ class ImageMemoryFragment : Fragment() {
         if (contentUris.isNotEmpty()) {
             currentIndex = (currentIndex + 1) % contentUris.size
 
-            coroutineScope.launch {
-                transitionWithCollege()
-            }
-
-            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
-            /*when (animations[i++ % animations.size]) {
+            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
+            when (animations[i++ % animations.size]) {
                 "1" -> {
-                    Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
-                    transitionWithScaleUpV2()
+                    Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
+                    transitionWithCollage()
                 }
 
                 "2" -> {
@@ -99,17 +93,14 @@ class ImageMemoryFragment : Fragment() {
 
                 "7" -> {
                     Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
-                    transitionWithCollege()
-                }
-                "8"->{
-                    Toast.makeText(requireContext(), "8", Toast.LENGTH_SHORT).show()
                     transitionWithMoveWithInitialZoom()
                 }
-                "9" -> {
-                    Toast.makeText(requireContext(), "9", Toast.LENGTH_SHORT).show()
+
+                "8" -> {
+                    Toast.makeText(requireContext(), "8", Toast.LENGTH_SHORT).show()
                     transitionWithScaleUpWithMove()
                 }
-            }*/
+            }
         }
     }
 
@@ -122,100 +113,28 @@ class ImageMemoryFragment : Fragment() {
         scaleX: Float = 1f,
         scaleY: Float = 1f,
         translationX: Float = 0f,
-        translationY: Float = 0f
+        translationY: Float = 0f,
+        rotation: Float = 0f
     ) {
         imageView.scaleX = scaleX
         imageView.scaleY = scaleY
         imageView.translationX = translationX
         imageView.translationY = translationY
-
-    }
-
-    private fun transitionWithScaleDownCollage() {
-        val currentImageUri = contentUris[currentIndex]
-        val nextImageUri = contentUris[(++currentIndex) % contentUris.size]
-        val previousImageUri = contentUris[(++currentIndex + contentUris.size) % contentUris.size]
-
-        //reset cover shape
-        setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
-        coverImageView.animate().alpha(1f)
-            .setDuration(coverRevealDuration)
-            .withEndAction {
-                //reset
-                setImageViewShapeWithPosition(collageImageView)
-                setImageViewShapeWithPosition(collageImageView_1)
-                setImageViewShapeWithPosition(currentImageView)
-                //set current
-                currentImageView.setImageURI(currentImageUri)
-
-                // show current image
-                coverImageView.alpha = 0f
-
-                collageImageView.setImageURI(nextImageUri)
-                collageImageView_1.setImageURI(previousImageUri)
-
-                //set other views out of screen
-                collageImageView.animate()
-                    .translationX(screenWidth)
-                    .setDuration(0)
-                    .start()
-                collageImageView_1.animate()
-                    .translationX(screenWidth)
-                    .setDuration(0)
-                    .start()
-
-                // Start the animation to scale down ImageView
-                currentImageView.animate()
-                    .scaleX(0.5f).scaleY(0.5f)
-                    .translationX(screenWidth / -4)
-                    .translationY(screenWidth / -4)
-                    .setDuration(animationDuration / 2).withEndAction {
-
-                        //transition enter and scale down to position
-                        collageImageView.animate().alpha(1f)
-                            .scaleX(0.5f).scaleY(0.5f)
-                            .translationX(0f)
-                            .setDuration(animationDuration / 3).withEndAction {
-
-                                //transition enter and scale down to position
-                                collageImageView_1.animate().alpha(1f)
-                                    .scaleX(0.5f).scaleY(0.5f)
-                                    .translationX(screenWidth / 4)
-                                    .translationY(screenWidth / 4)
-                                    .setDuration(animationDuration / 4).withEndAction {
-                                        collageImageView.animate().alpha(0f)
-                                            .setDuration(animationDuration)
-                                            .start()
-                                        collageImageView_1.animate().alpha(0f)
-                                            .setDuration(animationDuration)
-                                            .start()
-                                        //show next image
-                                        showNextImage()
-                                    }
-                                    .start()
-                            }
-                            .start()
-                    }
-                    .start()
-            }
-            .start()
+        imageView.rotation = rotation
     }
 
     private fun transitionWithScaleUp() {
         val currentImageUri = contentUris[currentIndex]
 
         //reset cover shape
-        coverImageView.scaleX = 1f
-        coverImageView.scaleY = 1f
+        setImageViewShapeWithPosition(coverImageView)
         coverImageView.setImageURI(currentImageUri)
+
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
                 //reset current
-                currentImageView.scaleX = 1f
-                currentImageView.scaleY = 1f
-                currentImageView.translationX = 0f
+                setImageViewShapeWithPosition(currentImageView)
                 currentImageView.setImageURI(currentImageUri)
 
                 // show current image
@@ -238,17 +157,14 @@ class ImageMemoryFragment : Fragment() {
         val screenWidth = resources.displayMetrics.widthPixels.toFloat()
 
         //reset cover shape
-        coverImageView.scaleX = 1f
-        coverImageView.scaleY = 1f
+        setImageViewShapeWithPosition(coverImageView)
         coverImageView.setImageURI(currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
 
                 //reset current
-                currentImageView.scaleX = 1f
-                currentImageView.scaleY = 1f
-                currentImageView.translationX = 0f
+                setImageViewShapeWithPosition(currentImageView)
                 currentImageView.setImageURI(currentImageUri)
 
                 // show current image
@@ -259,11 +175,11 @@ class ImageMemoryFragment : Fragment() {
                     .translationX(-screenWidth / 2.2f)
                     .setDuration(animationDuration * 2)
                     .withEndAction {
+
                         //second transition
+                        setImageViewShapeWithPosition(coverImageView, 2f, 2f, -screenWidth / 2.2f)
                         coverImageView.setImageURI(nextImageUri)
-                        coverImageView.scaleX = 2f
-                        coverImageView.scaleY = 2f
-                        coverImageView.translationX = -screenWidth / 2.2f
+
                         coverImageView.animate().alpha(1f)
                             .setDuration(coverRevealDuration)
                             .withEndAction {
@@ -271,7 +187,6 @@ class ImageMemoryFragment : Fragment() {
 
                                 //reset cover shape
                                 coverImageView.alpha = 0f
-                                coverImageView.translationX = 0f
 
                                 currentImageView.animate().scaleX(1f).scaleY(1f).translationX(0f)
                                     .setDuration(animationDuration * 2)
@@ -292,11 +207,11 @@ class ImageMemoryFragment : Fragment() {
         val currentImageUri = contentUris[currentIndex]
         val nextImageUri = nextImageUri()
         val imageScaleUp = 2f
-
+        val translationXLeft = screenWidth / (imageScaleUp * 2.1f)
+        val translationXRight = -screenWidth / (imageScaleUp * 1.1f)
         //reset cover shape
-        coverImageView.scaleX = imageScaleUp
-        coverImageView.scaleY = imageScaleUp
-        coverImageView.translationX = screenWidth / (imageScaleUp * 2.1f)
+        setImageViewShapeWithPosition(coverImageView, imageScaleUp, imageScaleUp, translationXLeft)
+
         coverImageView.setImageURI(currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
@@ -307,26 +222,44 @@ class ImageMemoryFragment : Fragment() {
                     currentImageView,
                     imageScaleUp,
                     imageScaleUp,
-                    screenWidth / 4.2f
+                    translationXLeft
                 )
                 currentImageView.setImageURI(currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
-                coverImageView.translationX = 0f
+                //set for next image
+                setImageViewShapeWithPosition(
+                    coverImageView,
+                    imageScaleUp,
+                    imageScaleUp,
+                    translationXRight
+                )
 
                 currentImageView.animate()
-                    .translationX(-screenWidth / (imageScaleUp * 1.1f))
+                    .translationX(translationXRight)
                     .setDuration(animationDuration)
                     .withEndAction {
 
-                        currentImageView.animate()
-                            .scaleX(1f).scaleY(1f)
-                            .translationX(0f)
-                            .setDuration(animationDuration)
+                        //second transition
+                        coverImageView.setImageURI(nextImageUri)
+                        coverImageView.animate().alpha(1f)
+                            .setDuration(coverRevealDuration)
                             .withEndAction {
-                                //show next image
-                                showNextImage()
+                                currentImageView.setImageURI(nextImageUri)
+
+                                //reset cover shape
+                                coverImageView.alpha = 0f
+
+                                currentImageView.animate()
+                                    .scaleX(1f).scaleY(1f)
+                                    .translationX(0f)
+                                    .setDuration(animationDuration)
+                                    .withEndAction {
+                                        //show next image
+                                        showNextImage()
+                                    }
+                                    .start()
                             }
                             .start()
                     }
@@ -337,9 +270,10 @@ class ImageMemoryFragment : Fragment() {
 
     private fun transitionWithScaleDown() {
         val currentImageUri = contentUris[currentIndex]
+        val scaleUp=1.2f
 
         //Init cover with shape
-        setImageViewShapeWithPosition(coverImageView, 2f, 2f)
+        setImageViewShapeWithPosition(coverImageView, scaleUp, scaleUp)
         coverImageView.setImageURI(currentImageUri)
 
         coverImageView.animate().alpha(1f)
@@ -347,7 +281,7 @@ class ImageMemoryFragment : Fragment() {
             .withEndAction {
 
                 //reset current
-                setImageViewShapeWithPosition(currentImageView, 2f, 2f)
+                setImageViewShapeWithPosition(currentImageView, scaleUp, scaleUp)
                 currentImageView.setImageURI(currentImageUri)
 
                 // show current image
@@ -404,7 +338,6 @@ class ImageMemoryFragment : Fragment() {
 
     private fun transitionWithScaleDownWithSlideInOut() {
         val currentImageUri = contentUris[currentIndex]
-        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
 
         //Init cover with shape
         setImageViewShapeWithPosition(coverImageView, 2f, 2f)
@@ -435,107 +368,202 @@ class ImageMemoryFragment : Fragment() {
             .start()
     }
 
-    private fun transitionWithCollege() {
+    private fun transitionWithScaleDownCollage() {
+        val currentImageUri = contentUris[currentIndex]
+        val nextImageUri = contentUris[(++currentIndex) % contentUris.size]
+        val previousImageUri = contentUris[(++currentIndex + contentUris.size) % contentUris.size]
+
+        //reset cover shape
+        setImageViewShapeWithPosition(coverImageView)
+        coverImageView.setImageURI(currentImageUri)
+        coverImageView.animate().alpha(1f)
+            .setDuration(coverRevealDuration)
+            .withEndAction {
+                //reset
+                setImageViewShapeWithPosition(collageImageView)
+                setImageViewShapeWithPosition(collageImageView_1)
+                setImageViewShapeWithPosition(currentImageView)
+                //set current
+                currentImageView.setImageURI(currentImageUri)
+
+                // show current image
+                coverImageView.alpha = 0f
+
+                collageImageView.setImageURI(nextImageUri)
+                collageImageView_1.setImageURI(previousImageUri)
+
+                //set other views out of screen
+                collageImageView.animate()
+                    .translationX(screenWidth)
+                    .setDuration(0)
+                    .start()
+                collageImageView_1.animate()
+                    .translationX(screenWidth)
+                    .setDuration(0)
+                    .start()
+
+                // Start the animation to scale down ImageView
+                currentImageView.animate()
+                    .scaleX(0.5f).scaleY(0.5f)
+                    .translationX(screenWidth / -4)
+                    .translationY(screenWidth / -4)
+                    .setDuration(animationDuration / 2).withEndAction {
+
+                        //transition enter and scale down to position
+                        collageImageView.animate().alpha(1f)
+                            .scaleX(0.5f).scaleY(0.5f)
+                            .translationX(0f)
+                            .setDuration(animationDuration / 3).withEndAction {
+
+                                //transition enter and scale down to position
+                                collageImageView_1.animate().alpha(1f)
+                                    .scaleX(0.5f).scaleY(0.5f)
+                                    .translationX(screenWidth / 4)
+                                    .translationY(screenWidth / 4)
+                                    .setDuration(animationDuration / 4).withEndAction {
+                                        collageImageView.animate().alpha(0f)
+                                            .setDuration(coverRevealDuration)
+                                            .start()
+                                        collageImageView_1.animate().alpha(0f)
+                                            .setDuration(coverRevealDuration)
+                                            .start()
+                                        //show next image
+                                        showNextImage()
+                                    }
+                                    .start()
+                            }
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
+    }
+    private fun transitionWithCollage() {
         val currentImageUri = contentUris[currentIndex]
         val collegeImageUri = contentUris[(currentIndex + 1) % contentUris.size]
         val collegeImageUri_1 = contentUris[(currentIndex + 2) % contentUris.size]
         val collegeImageUri_2 = contentUris[(currentIndex + 3) % contentUris.size]
         val collegeImageUri_3 = contentUris[(currentIndex + 4) % contentUris.size]
 
-            //reset cover shape
-            setImageViewShapeWithPosition(coverImageView)
-            coverImageView.setImageURI(currentImageUri)
-            coverImageView.animate().alpha(1f)
-                .setDuration(animationDuration)
-                .withEndAction {
-                    currentImageView.setImageURI(currentImageUri)
-                    //reset current
-                    setImageViewShapeWithPosition(currentImageView)
+        //reset cover shape
+        setImageViewShapeWithPosition(coverImageView)
+        coverImageView.setImageURI(currentImageUri)
+        coverImageView.animate().alpha(1f)
+            .setDuration(animationDuration)
+            .withEndAction {
+                currentImageView.setImageURI(currentImageUri)
+                //reset current
+                setImageViewShapeWithPosition(currentImageView)
 
-                    // show current image
-                    coverImageView.alpha = 0f
+                // show current image
+                coverImageView.alpha = 0f
 
-                    collageImageView.setImageURI(collegeImageUri)
-                    collageImageView_1.setImageURI(collegeImageUri_1)
-                    collageImageView_2.setImageURI(collegeImageUri_2)
-                    collageImageView_3.setImageURI(collegeImageUri_3)
+                collageImageView.setImageURI(collegeImageUri)
+                collageImageView_1.setImageURI(collegeImageUri_1)
+                collageImageView_2.setImageURI(collegeImageUri_2)
+                collageImageView_3.setImageURI(collegeImageUri_3)
 
-                    //hide previous image view which is blurred
-                    currentImageView.animate().scaleX(0.3f).scaleY(0.3f)
-                        .translationX(screenWidth / -4)
-                        .translationY(screenHeight / -4)
-                        .rotation(-25f)
-                        .setDuration(animationDuration)
-                        .withEndAction {
+                //hide previous image view which is blurred
+                currentImageView.animate().scaleX(0.3f).scaleY(0.3f)
+                    .translationX(screenWidth / -4)
+                    .translationY(screenHeight / -4)
+                    .rotation(-25f)
+                    .setDuration(animationDuration)
+                    .withEndAction {
 
-                            collageImageView.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
-                                .translationX(screenWidth / 4)
-                                .translationY(screenHeight / 4)
-                                .rotation(25f)
-                                .setDuration(animationDuration)
-                                .withEndAction {
+                        collageImageView.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
+                            .translationX(screenWidth / 4)
+                            .translationY(screenHeight / 4)
+                            .rotation(25f)
+                            .setDuration(animationDuration)
+                            .withEndAction {
 
-                                    collageImageView_1.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
-                                        .translationX(screenWidth / 5)
-                                        .translationY(screenHeight / -5)
-                                        .rotation(25f)
-                                        .setDuration(animationDuration)
-                                        .withEndAction {
-                                            collageImageView_2.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
-                                                .translationX(screenWidth / -5)
-                                                .translationY(screenHeight / 5)
-                                                .rotation(-25f)
-                                                .setDuration(animationDuration)
-                                                .withEndAction {
+                                collageImageView_1.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
+                                    .translationX(screenWidth / 5)
+                                    .translationY(screenHeight / -5)
+                                    .rotation(25f)
+                                    .setDuration(animationDuration)
+                                    .withEndAction {
+                                        collageImageView_2.animate().alpha(1f).scaleX(0.3f)
+                                            .scaleY(0.3f)
+                                            .translationX(screenWidth / -5)
+                                            .translationY(screenHeight / 5)
+                                            .rotation(-25f)
+                                            .setDuration(animationDuration)
+                                            .withEndAction {
 
-                                                    collageImageView_3.animate().alpha(1f)
-                                                        .scaleX(0.3f).scaleY(0.3f)
-                                                        .setDuration(animationDuration)
-                                                        .withEndAction {
+                                                collageImageView_3.animate().alpha(1f)
+                                                    .scaleX(0.3f).scaleY(0.3f)
+                                                    .setDuration(animationDuration)
+                                                    .withEndAction {
 
-                                                            //stay delay
-                                                            //delay(animationDuration / 2)
+                                                        //stay delay
+                                                        //delay(animationDuration / 2)
 
-                                                            //reset college Image view
-                                                            collageImageView.animate().alpha(0f)
-                                                                .setDuration(animationDuration)
-                                                                .withEndAction {
-                                                                    setImageViewShapeWithPosition(collageImageView, 1f, 1f, 0f, 0f)
-                                                                }
-                                                                .start()
-                                                            collageImageView_1.animate().alpha(0f)
-                                                                .setDuration(animationDuration)
-                                                                .withEndAction {
-                                                                    setImageViewShapeWithPosition(collageImageView_1, 1f, 1f, 0f, 0f)
-                                                                }
-                                                                .start()
-                                                            collageImageView_2.animate().alpha(0f)
-                                                                .setDuration(animationDuration)
-                                                                .withEndAction {
-                                                                    setImageViewShapeWithPosition(collageImageView_2, 1f, 1f, 0f, 0f)
-                                                                }
-                                                                .start()
-                                                            collageImageView_3.animate().alpha(0f)
-                                                                .setDuration(animationDuration)
-                                                                .withEndAction {
-                                                                    setImageViewShapeWithPosition(collageImageView_3, 1f, 1f, 0f, 0f)
-                                                                }
-                                                                .start()
+                                                        //reset college Image view
+                                                        collageImageView.animate().alpha(0f)
+                                                            .setDuration(coverRevealDuration)
+                                                            .withEndAction {
+                                                                setImageViewShapeWithPosition(
+                                                                    collageImageView,
+                                                                    1f,
+                                                                    1f,
+                                                                    0f,
+                                                                    0f
+                                                                )
+                                                            }
+                                                            .start()
+                                                        collageImageView_1.animate().alpha(0f)
+                                                            .setDuration(coverRevealDuration)
+                                                            .withEndAction {
+                                                                setImageViewShapeWithPosition(
+                                                                    collageImageView_1,
+                                                                    1f,
+                                                                    1f,
+                                                                    0f,
+                                                                    0f
+                                                                )
+                                                            }
+                                                            .start()
+                                                        collageImageView_2.animate().alpha(0f)
+                                                            .setDuration(coverRevealDuration)
+                                                            .withEndAction {
+                                                                setImageViewShapeWithPosition(
+                                                                    collageImageView_2,
+                                                                    1f,
+                                                                    1f,
+                                                                    0f,
+                                                                    0f
+                                                                )
+                                                            }
+                                                            .start()
+                                                        collageImageView_3.animate().alpha(0f)
+                                                            .setDuration(coverRevealDuration)
+                                                            .withEndAction {
+                                                                setImageViewShapeWithPosition(
+                                                                    collageImageView_3,
+                                                                    1f,
+                                                                    1f,
+                                                                    0f,
+                                                                    0f
+                                                                )
+                                                            }
+                                                            .start()
 
-                                                            //show next image
-                                                            showNextImage()
-                                                        }
-                                                        .start()
-                                                }
-                                                .start()
-                                        }
-                                        .start()
-                                }
-                                .start()
-                        }
-                        .start()
-                }
-                .start()
+                                                        //show next image
+                                                        showNextImage()
+                                                    }
+                                                    .start()
+                                            }
+                                            .start()
+                                    }
+                                    .start()
+                            }
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
     }
 
 }
