@@ -11,6 +11,7 @@ class Data {
         var currentIndex = 0
 
         var animationDuration = 3000L
+        var coverRevealDuration=500L
 
         //Assigned in MainActivity
         var screenWidth = 0f

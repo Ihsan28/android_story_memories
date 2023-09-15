@@ -53,7 +53,7 @@
             android:alpha="0.0"
             android:scaleType="centerCrop"
             app:shapeAppearanceOverlay="@style/RoundedCorners" />
-        <!--Cover of all images-->
+        <!--cover of all images-->
         <ImageView
             android:id="@+id/coverImageView"
             android:layout_width="match_parent"
