@@ -443,7 +443,7 @@ class ImageMemoryFragment : Fragment() {
         val collegeImageUri_3 = contentUris[(currentIndex + 4) % contentUris.size]
 
             //reset cover shape
-            setImageViewShapeWithPosition(coverImageView,)
+            setImageViewShapeWithPosition(coverImageView)
             coverImageView.setImageURI(currentImageUri)
             coverImageView.animate().alpha(1f)
                 .setDuration(animationDuration)
