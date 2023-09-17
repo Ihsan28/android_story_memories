@@ -1,5 +1,6 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -21,6 +22,14 @@ class EditSelectedFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
     private lateinit var adapter: GalleryAdapter
     private lateinit var miniPreviewRecyclerView: RecyclerView
+    val mediaItems=contentUris.map {
+        val ext=it.toString().substring(it.toString().lastIndexOf(".")+1)
+        if(ext=="mp4"){
+            Pair(it, MediaType.VIDEO)
+        }else{
+            Pair(it,MediaType.IMAGE)
+        }
+    }
     var newUri: Uri = Uri.parse("")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,30 +39,30 @@ class EditSelectedFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_edit_selected, container, false)
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-
-        // Initialize contentUris with some URIs (images and videos)
-        // ...
 
         viewPager = view.findViewById(R.id.viewPager)
         adapter = GalleryAdapter(contentUris)
         viewPager.adapter = adapter
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                currentIndex = position // Update the current index
+                val centeredPosition = calculateCenteredPosition()
+                scrollMiniPreviewToCenteredPosition(centeredPosition)
+            }
+        })
+
 
         val addButton = view.findViewById<Button>(R.id.addButton)
         val removeButton = view.findViewById<Button>(R.id.removeButton)
 
         miniPreviewRecyclerView = view.findViewById(R.id.miniPreviewRecyclerView)
 
-        val miniPreviewAdapter = MiniPreviewAdapter(contentUris.map {
-            val ext=it.toString().substring(it.toString().lastIndexOf(".")+1)
-            if(ext=="mp4"){
-                Pair(it, MediaType.VIDEO)
-            }else{
-                Pair(it,MediaType.IMAGE)
-            }
-        })
+        val miniPreviewAdapter = MiniPreviewAdapter(mediaItems)
+
         val layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         miniPreviewRecyclerView.layoutManager = layoutManager
@@ -81,4 +90,22 @@ class EditSelectedFragment : Fragment() {
             }
         }
     }
+
+    private fun calculateCenteredPosition(): Int {
+        val currentContentUri = contentUris[currentIndex] // Current content URI in ViewPager
+        for ((index, pair) in mediaItems.withIndex()) {
+            if (pair.first == currentContentUri) {
+                return index
+            }
+        }
+        return RecyclerView.NO_POSITION // Not found
+    }
+
+    private fun scrollMiniPreviewToCenteredPosition(centeredPosition: Int) {
+        if (centeredPosition != RecyclerView.NO_POSITION) {
+            // Scroll to the centered position with a smooth scroll effect
+            miniPreviewRecyclerView.smoothScrollToPosition(centeredPosition)
+        }
+    }
+
 }

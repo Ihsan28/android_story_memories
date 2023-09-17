@@ -44,7 +44,7 @@
         <!-- Add RecyclerView for mini preview -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/miniPreviewRecyclerView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_above="@id/buttonContainer"
             android:layout_alignParentStart="true"

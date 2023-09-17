@@ -23,8 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
 class ImageMemoryFragment : Fragment() {
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
-
     private lateinit var coverImageView: ImageView
     private lateinit var currentImageView: ImageView
     private lateinit var collageImageView: ImageView
@@ -123,19 +121,25 @@ class ImageMemoryFragment : Fragment() {
         imageView.rotation = rotation
     }
 
+    private fun setImageFromContentUri(imageView: ImageView, contentUri: Uri) {
+        Glide.with(requireContext())
+            .load(contentUri)
+            .into(imageView)
+    }
+
     private fun transitionWithScaleUp() {
         val currentImageUri = contentUris[currentIndex]
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
 
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
@@ -158,14 +162,14 @@ class ImageMemoryFragment : Fragment() {
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
 
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
@@ -178,12 +182,12 @@ class ImageMemoryFragment : Fragment() {
 
                         //second transition
                         setImageViewShapeWithPosition(coverImageView, 2f, 2f, -screenWidth / 2.2f)
-                        coverImageView.setImageURI(nextImageUri)
+                        setImageFromContentUri(coverImageView, nextImageUri)
 
                         coverImageView.animate().alpha(1f)
                             .setDuration(coverRevealDuration)
                             .withEndAction {
-                                currentImageView.setImageURI(nextImageUri)
+                                setImageFromContentUri(currentImageView, nextImageUri)
 
                                 //reset cover shape
                                 coverImageView.alpha = 0f
@@ -212,7 +216,7 @@ class ImageMemoryFragment : Fragment() {
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView, imageScaleUp, imageScaleUp, translationXLeft)
 
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
@@ -224,7 +228,7 @@ class ImageMemoryFragment : Fragment() {
                     imageScaleUp,
                     translationXLeft
                 )
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
@@ -242,11 +246,11 @@ class ImageMemoryFragment : Fragment() {
                     .withEndAction {
 
                         //second transition
-                        coverImageView.setImageURI(nextImageUri)
+                        setImageFromContentUri(coverImageView, nextImageUri)
                         coverImageView.animate().alpha(1f)
                             .setDuration(coverRevealDuration)
                             .withEndAction {
-                                currentImageView.setImageURI(nextImageUri)
+                                setImageFromContentUri(currentImageView, nextImageUri)
 
                                 //reset cover shape
                                 coverImageView.alpha = 0f
@@ -270,11 +274,11 @@ class ImageMemoryFragment : Fragment() {
 
     private fun transitionWithScaleDown() {
         val currentImageUri = contentUris[currentIndex]
-        val scaleUp=1.2f
+        val scaleUp = 1.2f
 
         //Init cover with shape
         setImageViewShapeWithPosition(coverImageView, scaleUp, scaleUp)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
 
         coverImageView.animate().alpha(1f)
             .setDuration(animationDuration)
@@ -282,7 +286,7 @@ class ImageMemoryFragment : Fragment() {
 
                 //reset current
                 setImageViewShapeWithPosition(currentImageView, scaleUp, scaleUp)
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
@@ -305,7 +309,7 @@ class ImageMemoryFragment : Fragment() {
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(animationDuration)
             .withEndAction {
@@ -341,14 +345,14 @@ class ImageMemoryFragment : Fragment() {
 
         //Init cover with shape
         setImageViewShapeWithPosition(coverImageView, 2f, 2f)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(animationDuration)
             .withEndAction {
 
                 //set current
                 setImageViewShapeWithPosition(currentImageView, 2f, 2f)
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
@@ -375,7 +379,7 @@ class ImageMemoryFragment : Fragment() {
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(coverRevealDuration)
             .withEndAction {
@@ -384,13 +388,13 @@ class ImageMemoryFragment : Fragment() {
                 setImageViewShapeWithPosition(collageImageView_1)
                 setImageViewShapeWithPosition(currentImageView)
                 //set current
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
 
                 // show current image
                 coverImageView.alpha = 0f
 
-                collageImageView.setImageURI(nextImageUri)
-                collageImageView_1.setImageURI(previousImageUri)
+                setImageFromContentUri(collageImageView, nextImageUri)
+                setImageFromContentUri(collageImageView_1, previousImageUri)
 
                 //set other views out of screen
                 collageImageView.animate()
@@ -438,6 +442,7 @@ class ImageMemoryFragment : Fragment() {
             }
             .start()
     }
+
     private fun transitionWithCollage() {
         val currentImageUri = contentUris[currentIndex]
         val collegeImageUri = contentUris[(currentIndex + 1) % contentUris.size]
@@ -447,21 +452,21 @@ class ImageMemoryFragment : Fragment() {
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
-        coverImageView.setImageURI(currentImageUri)
+        setImageFromContentUri(coverImageView, currentImageUri)
         coverImageView.animate().alpha(1f)
             .setDuration(animationDuration)
             .withEndAction {
-                currentImageView.setImageURI(currentImageUri)
+                setImageFromContentUri(currentImageView, currentImageUri)
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
 
                 // show current image
                 coverImageView.alpha = 0f
 
-                collageImageView.setImageURI(collegeImageUri)
-                collageImageView_1.setImageURI(collegeImageUri_1)
-                collageImageView_2.setImageURI(collegeImageUri_2)
-                collageImageView_3.setImageURI(collegeImageUri_3)
+                setImageFromContentUri(collageImageView, collegeImageUri)
+                setImageFromContentUri(collageImageView_1, collegeImageUri_1)
+                setImageFromContentUri(collageImageView_2, collegeImageUri_2)
+                setImageFromContentUri(collageImageView_3, collegeImageUri_3)
 
                 //hide previous image view which is blurred
                 currentImageView.animate().scaleX(0.3f).scaleY(0.3f)

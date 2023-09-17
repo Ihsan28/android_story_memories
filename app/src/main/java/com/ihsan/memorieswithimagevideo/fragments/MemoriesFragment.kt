@@ -14,10 +14,10 @@ import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.CustomPageTransformer
 import com.ihsan.memorieswithimagevideo.adapter.ViewPagerAdapter
-import com.ihsan.memorieswithimagevideo.data.Data
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MemoriesFragment : Fragment() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
@@ -31,35 +31,33 @@ class MemoriesFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
                 val clipData = result.data!!.clipData
-                Data.contentUris.clear()
+                contentUris.clear()
                 if (clipData != null) {
                     for (i in 0 until clipData.itemCount) {
                         val imageUri = clipData.getItemAt(i).uri
-                        Data.contentUris.add(imageUri)
+                        contentUris.add(imageUri)
                     }
-                    coroutineScope.launch {
+                   
                         callViewPagerAdapter()
-                    }
+                    
                 } else {
                     val imageUri = result.data!!.data
                     if (imageUri != null) {
-                        Data.contentUris.clear()
-                        Data.contentUris.add(imageUri)
+                        contentUris.clear()
+                        contentUris.add(imageUri)
                     }
-                    coroutineScope.launch {
                         callViewPagerAdapter()
-                    }
                 }
 
-                // Ensure there are at least 2 images and at most 5 images
-                if (Data.contentUris.size > 5) {
-                    Data.contentUris = Data.contentUris.subList(0, 5)
-                } else if (Data.contentUris.size < 2) {
+                /*// Ensure there are at least 2 images and at most 5 images
+                if (contentUris.size > 5) {
+                    contentUris = contentUris.subList(0, 5)
+                } else if (contentUris.size < 2) {
                     // Handle the case when less than 2 images are selected
                     // Show a message or take appropriate action
                     return@registerForActivityResult
-                }
-                Data.currentIndex = 0
+                }*/
+                currentIndex = 0
             }
         }
 
@@ -79,6 +77,11 @@ class MemoriesFragment : Fragment() {
         editButton = view.findViewById(R.id.edit)
         exportButton = view.findViewById(R.id.export)
         pickImageButton = view.findViewById(R.id.pickImageButton)
+
+        if (contentUris.isNotEmpty()) {
+            currentIndex = 0
+            callViewPagerAdapter()
+        }
 
         pickImageButton.setOnClickListener {
             pickImages()
@@ -111,7 +114,7 @@ class MemoriesFragment : Fragment() {
     }
 
     private fun callViewPagerAdapter() {
-        if (Data.contentUris.isNotEmpty()) {
+        if (contentUris.isNotEmpty()) {
             val tabMatchAdapter =
                 ViewPagerAdapter(childFragmentManager, lifecycle)
             viewPager2.adapter = tabMatchAdapter
