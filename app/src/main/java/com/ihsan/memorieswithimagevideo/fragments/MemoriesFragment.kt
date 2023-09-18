@@ -2,61 +2,49 @@ package com.ihsan.memorieswithimagevideo.fragments
 
 import android.app.Activity
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
-import android.provider.MediaStore
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.CustomPageTransformer
 import com.ihsan.memorieswithimagevideo.adapter.ViewPagerAdapter
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 
 class MemoriesFragment : Fragment() {
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private lateinit var viewPager2: ViewPager2
     private lateinit var pickImageButton: Button
     private lateinit var editButton: Button
     private lateinit var exportButton: Button
+    private lateinit var mediaPlayer: MediaPlayer
 
     //pick image launcher contract for image picker intent
-    private val pickImageContract =
+    private val pickMediaContract =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
                 val clipData = result.data!!.clipData
-                contentUris.clear()
+                contentUris.value!!.clear()
+                mediaPlayer.start()
                 if (clipData != null) {
                     for (i in 0 until clipData.itemCount) {
-                        val imageUri = clipData.getItemAt(i).uri
-                        contentUris.add(imageUri)
+                        val mediaUri = clipData.getItemAt(i).uri
+                        contentUris.value!!.add(mediaUri)
                     }
-                   
-                        callViewPagerAdapter()
-                    
+                    callViewPagerAdapter()
                 } else {
-                    val imageUri = result.data!!.data
-                    if (imageUri != null) {
-                        contentUris.clear()
-                        contentUris.add(imageUri)
-                    }
+                    val mediaUri = result.data!!.data
+                    if (mediaUri != null) {
+                        contentUris.value!!.clear()
+                        contentUris.value!!.add(mediaUri)
                         callViewPagerAdapter()
+                    }
                 }
-
-                /*// Ensure there are at least 2 images and at most 5 images
-                if (contentUris.size > 5) {
-                    contentUris = contentUris.subList(0, 5)
-                } else if (contentUris.size < 2) {
-                    // Handle the case when less than 2 images are selected
-                    // Show a message or take appropriate action
-                    return@registerForActivityResult
-                }*/
                 currentIndex = 0
             }
         }
@@ -78,8 +66,18 @@ class MemoriesFragment : Fragment() {
         exportButton = view.findViewById(R.id.export)
         pickImageButton = view.findViewById(R.id.pickImageButton)
 
-        if (contentUris.isNotEmpty()) {
+        // Initialize MediaPlayer
+        mediaPlayer = MediaPlayer.create(requireContext(), R.raw.aylex)
+        mediaPlayer.isLooping = true
+
+        mediaPlayer.setOnCompletionListener {
+            // Animation has ended, stop the audio
+            mediaPlayer.stop()
+        }
+
+        if (contentUris.value!!.isNotEmpty()) {
             currentIndex = 0
+            mediaPlayer.start()
             callViewPagerAdapter()
         }
 
@@ -105,16 +103,14 @@ class MemoriesFragment : Fragment() {
     }
 
     private fun pickImages() {
-        val pickImageIntent = Intent(
-            Intent.ACTION_PICK,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        )
-        pickImageIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        pickImageContract.launch(pickImageIntent)
+        val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        pickMediaIntent.type = "image/* video/*"  // This filters for both images and videos
+        pickMediaIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        pickMediaContract.launch(pickMediaIntent)
     }
 
     private fun callViewPagerAdapter() {
-        if (contentUris.isNotEmpty()) {
+        if (contentUris.value!!.isNotEmpty()) {
             val tabMatchAdapter =
                 ViewPagerAdapter(childFragmentManager, lifecycle)
             viewPager2.adapter = tabMatchAdapter

@@ -1,11 +1,11 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.VideoView
+import androidx.fragment.app.Fragment
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
@@ -25,7 +25,7 @@ class VideoMemoryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         videoView = view.findViewById(R.id.videoView)
-        videoView.setVideoURI(contentUris[currentIndex])
+        videoView.setVideoURI(contentUris.value!![currentIndex])
         videoView.start()
     }
 }
