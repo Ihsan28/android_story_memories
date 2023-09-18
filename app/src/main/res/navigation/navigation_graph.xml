@@ -23,4 +23,9 @@
             android:id="@+id/action_editSelectedFragment_to_memoriesFragment"
             app:destination="@id/memoriesFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/videoMemoryFragment"
+        android:name="com.ihsan.memorieswithimagevideo.fragments.VideoMemoryFragment"
+        android:label="fragment_video_memory"
+        tools:layout="@layout/fragment_video_memory" />
 </navigation>

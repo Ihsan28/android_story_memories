@@ -60,6 +60,7 @@ class MemoriesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewPager2 = view.findViewById(R.id.viewPager2)
+        viewPager2.offscreenPageLimit = ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
         viewPager2.setPageTransformer(CustomPageTransformer())
 
         editButton = view.findViewById(R.id.edit)
@@ -103,10 +104,26 @@ class MemoriesFragment : Fragment() {
     }
 
     private fun pickImages() {
-        val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        pickMediaIntent.type = "image/* video/*"  // This filters for both images and videos
-        pickMediaIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        pickMediaContract.launch(pickMediaIntent)
+        val pickImagesIntent = Intent(Intent.ACTION_PICK)
+        pickImagesIntent.type = "image/*"
+        pickImagesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+        val pickVideosIntent = Intent(Intent.ACTION_PICK)
+        pickVideosIntent.type = "video/*"
+        pickVideosIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+        val chooserIntent = Intent.createChooser(
+            pickImagesIntent,
+            "Select Images and Videos"
+        )
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickVideosIntent))
+
+        try {
+            pickMediaContract.launch(chooserIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the exception, possibly by displaying an error message.
+        }
     }
 
     private fun callViewPagerAdapter() {

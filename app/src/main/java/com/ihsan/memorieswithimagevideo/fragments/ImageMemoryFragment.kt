@@ -19,8 +19,6 @@ import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenHeight
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
 import jp.wasabeef.transformers.glide.BlurTransformation
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 
 class ImageMemoryFragment : Fragment() {
     private lateinit var coverImageView: ImageView
@@ -40,8 +38,6 @@ class ImageMemoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //get image uris from bundle
-        currentIndex = arguments?.getInt("index") ?: 0
 
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
@@ -56,48 +52,48 @@ class ImageMemoryFragment : Fragment() {
     var i = 0;
     private fun showNextImage() {
         if (contentUris.value!!.isNotEmpty()) {
-            currentIndex = (currentIndex + 1) % contentUris.value!!.size
-            currentContentUri = contentUris.value!![currentIndex]
+            //Increment the index
+            nextImageUri()
 
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
             when (animations[i++ % animations.size]) {
                 "1" -> {
-                    Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
                     transitionWithCollage()
                 }
 
                 "2" -> {
-                    Toast.makeText(requireContext(), "2", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "2", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDownCollage()
                 }
 
                 "3" -> {
-                    Toast.makeText(requireContext(), "3", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "3", Toast.LENGTH_SHORT).show()
                     transitionWithScaleUp()
                 }
 
                 "4" -> {
-                    Toast.makeText(requireContext(), "4", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "4", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDown()
                 }
 
                 "5" -> {
-                    Toast.makeText(requireContext(), "5", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "5", Toast.LENGTH_SHORT).show()
                     transitionWithBlurry()
                 }
 
                 "6" -> {
-                    Toast.makeText(requireContext(), "6", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "6", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDownWithSlideInOut()
                 }
 
                 "7" -> {
-                    Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
                     transitionWithMoveWithInitialZoom()
                 }
 
                 "8" -> {
-                    Toast.makeText(requireContext(), "8", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(requireContext(), "8", Toast.LENGTH_SHORT).show()
                     transitionWithScaleUpWithMove()
                 }
             }
@@ -105,7 +101,9 @@ class ImageMemoryFragment : Fragment() {
     }
 
     private fun nextImageUri(): Uri {
-        currentContentUri= contentUris.value!![++currentIndex % contentUris.value!!.size]
+        currentIndex = (currentIndex + 1) % contentUris.value!!.size
+        currentContentUri = contentUris.value!![currentIndex]
+
         return currentContentUri
     }
 

@@ -25,7 +25,16 @@ class VideoMemoryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         videoView = view.findViewById(R.id.videoView)
-        videoView.setVideoURI(contentUris.value!![currentIndex])
-        videoView.start()
+        val uri = contentUris.value!![currentIndex]
+        val ext = uri.toString().substring(uri.toString().lastIndexOf(".") + 1)
+        //if (listOfAllowedVideoFormat.contains(ext)) {
+        videoView.setVideoURI(uri)
+        videoView.setOnPreparedListener {
+            it.start()
+            it.isLooping = true
+        }
+        //}
+
+
     }
 }
