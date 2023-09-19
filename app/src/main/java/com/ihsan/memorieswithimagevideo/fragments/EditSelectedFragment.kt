@@ -3,8 +3,11 @@ package com.ihsan.memorieswithimagevideo.fragments
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.os.Bundle
-import android.provider.MediaStore
+import android.util.Log
+import android.util.LongSparseArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,14 +17,21 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler
+import com.github.hiteshsondhi88.libffmpeg.FFmpeg
+import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
+import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.adapter.EditViewPagerAdapter
 import com.ihsan.memorieswithimagevideo.adapter.MiniPreviewAdapter
-import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
+import java.lang.Math.ceil
+import java.net.URI
+import java.util.Formatter
 
+private const val TAG = "EditSelectedFragment"
 class EditSelectedFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
     private lateinit var editViewPagerAdapter: EditViewPagerAdapter
@@ -30,31 +40,156 @@ class EditSelectedFragment : Fragment() {
 
     //pick image launcher contract for image picker intent
     @SuppressLint("NotifyDataSetChanged")
-    private val pickImageContract =
+    private val pickMediaContract =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
                 val clipData = result.data!!.clipData
+                //contentUris.value!!.clear()
 
                 if (clipData != null) {
                     for (i in 0 until clipData.itemCount) {
-                        val imageUri = clipData.getItemAt(i).uri
-                        contentUris.value?.add(imageUri)
+                        val mediaUri = clipData.getItemAt(i).uri
+                        contentUris.value!!.add(mediaUri)
                     }
-
                     callViewPagerAdapter()
-
                 } else {
-                    val imageUri = result.data!!.data
-                    if (imageUri != null) {
-                        contentUris.value?.clear()
-                        contentUris.value?.add(imageUri)
+                    val mediaUri = result.data!!.data
+                    if (mediaUri != null) {
+                        contentUris.value!!.clear()
+                        contentUris.value!!.add(mediaUri)
+                        callViewPagerAdapter()
                     }
-                    callViewPagerAdapter()
                 }
-
                 currentIndex = 0
             }
         }
+
+    fun convertTimestampToString(timeInMs: Float): String {
+        val totalSeconds = (timeInMs / 1000).toInt()
+        val seconds = totalSeconds % 60
+        val minutes = totalSeconds / 60 % 60
+        val hours = totalSeconds / 3600
+        val formatter = Formatter()
+        return if (hours > 0) {
+            formatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
+        } else {
+            formatter.format("%02d:%02d", minutes, seconds).toString()
+        }
+    }
+    private fun createPreview(viewWidth: Int) {
+        BackgroundExecutor.execute(object : BackgroundExecutor.Task("", 0L, "") {
+            override fun execute() {
+                try {
+                    val threshold = 11
+                    val thumbnails = LongSparseArray<Bitmap>()
+                    val mediaMetadataRetriever = MediaMetadataRetriever()
+                    mediaMetadataRetriever.setDataSource(context, videoUri)
+                    val videoLengthInMs = (Integer.parseInt(
+                        mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    ) * 1000).toLong()
+                    val frameHeight = viewHeight
+                    val initialBitmap = mediaMetadataRetriever.getFrameAtTime(
+                        0,
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                    )
+                    val frameWidth =
+                        ((initialBitmap.width.toFloat() / initialBitmap.height.toFloat()) * frameHeight.toFloat()).toInt()
+                    var numThumbs = ceil((viewWidth.toFloat() / frameWidth)).toInt()
+                    if (numThumbs < threshold) {
+                        numThumbs = threshold
+                    }
+                    val cropWidth = viewWidth / threshold
+                    val interval = videoLengthInMs / numThumbs
+                    for (i in 0 until numThumbs) {
+                        var bitmap = mediaMetadataRetriever.getFrameAtTime(
+                            i * interval,
+                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                        )
+                        bitmap?.let {
+                            try {
+                                bitmap = Bitmap.createScaledBitmap(
+                                    bitmap,
+                                    frameWidth,
+                                    frameHeight,
+                                    false
+                                )
+                                bitmap = Bitmap.createBitmap(bitmap, 0, 0, cropWidth, bitmap.height)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "error while create bitmap: $e")
+                            }
+                            thumbnails.put(i.toLong(), bitmap)
+                        }
+                    }
+                    mediaMetadataRetriever.release()
+                    returnBitmaps(thumbnails)
+                } catch (e: Throwable) {
+                    Thread.getDefaultUncaughtExceptionHandler()
+                        .uncaughtException(Thread.currentThread(), e)
+                }
+            }
+        })
+    }
+
+
+
+    private fun videoCropper(input:String, output:String, startPos:String, endPos:String) {
+
+        val ffmpeg = FFmpeg.getInstance(requireContext())
+        ffmpeg.loadBinary(object : FFmpegLoadBinaryResponseHandler {
+            override fun onFinish() {
+                Log.d("FFmpeg", "onFinish")
+            }
+
+            override fun onSuccess() {
+                Log.d("FFmpeg", "onSuccess")
+                //val changePlaybacSpeedCcommand = arrayOf("-i", input, "-vf", "\"setpts=$scale*PTS\"", output)
+                //val compressVideoCommand = arrayOf("-i", input, "-vf", "scale=$w:$h", "-c:v", "libx264", "-preset", "veryslow", "-crf", "24", output)
+                //val removeAudioCommand = arrayOf("-i", input, "-an", output)
+                //val cropCommand = arrayOf("-i", input, "-filter:v", "crop=$w:$h:$x:$y", "-threads", "5", "-preset", "ultrafast", "-strict", "-2", "-c:a", "copy", output)
+                val trimCommand = arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
+
+                try {
+                        ffmpeg.execute(trimCommand, object : ExecuteBinaryResponseHandler() {
+                            override fun onSuccess(message: String?) {
+                                super.onSuccess(message)
+                                Log.d(TAG, "onSuccess: " + message!!)
+                            }
+
+                            override fun onProgress(message: String?) {
+                                super.onProgress(message)
+                                Log.d(TAG, "onProgress: " + message!!)
+                            }
+
+                            override fun onFailure(message: String?) {
+                                super.onFailure(message)
+                                Log.e(TAG, "onFailure: " + message!!)
+                            }
+
+                            override fun onStart() {
+                                super.onStart()
+                                Log.d(TAG, "onStart")
+                            }
+
+                            override fun onFinish() {
+                                super.onFinish()
+                                Log.d(TAG, "onFinish")
+                            }
+                        })
+                    } catch (e: FFmpegCommandAlreadyRunningException) {
+                        Log.e("FFmpeg", "FFmpeg runs already")
+                    }
+            }
+
+            override fun onFailure() {
+                Log.e("FFmpeg", "onFailure")
+            }
+
+            override fun onStart() {
+            }
+        })
+
+
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -68,7 +203,7 @@ class EditSelectedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Data().mapContentUrisToMediaItems()
+        //Data().mapContentUrisToMediaItems()
 
         // Initialize
         viewPager = view.findViewById(R.id.viewPager)
@@ -109,7 +244,7 @@ class EditSelectedFragment : Fragment() {
         }
 
         addButton.setOnClickListener {
-            pickImages()
+            pickMediaContent()
             editViewPagerAdapter.notifyDataSetChanged()
         }
 
@@ -121,13 +256,27 @@ class EditSelectedFragment : Fragment() {
         }
     }
 
-    private fun pickImages() {
-        val pickImageIntent = Intent(
-            Intent.ACTION_PICK,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    private fun pickMediaContent() {
+        val pickImagesIntent = Intent(Intent.ACTION_PICK)
+        pickImagesIntent.type = "image/*"
+        pickImagesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+        val pickVideosIntent = Intent(Intent.ACTION_PICK)
+        pickVideosIntent.type = "video/*"
+        pickVideosIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+        val chooserIntent = Intent.createChooser(
+            pickImagesIntent,
+            "Select Images and Videos"
         )
-        pickImageIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        pickImageContract.launch(pickImageIntent)
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickVideosIntent))
+
+        try {
+            pickMediaContract.launch(chooserIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the exception, possibly by displaying an error message.
+        }
     }
 
     private fun callViewPagerAdapter() {

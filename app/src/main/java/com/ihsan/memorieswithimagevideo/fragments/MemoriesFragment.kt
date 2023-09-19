@@ -83,7 +83,7 @@ class MemoriesFragment : Fragment() {
         }
 
         pickImageButton.setOnClickListener {
-            pickImages()
+            pickMediaContent()
         }
 
         editButton.setOnClickListener {
@@ -103,7 +103,7 @@ class MemoriesFragment : Fragment() {
         }
     }
 
-    private fun pickImages() {
+    private fun pickMediaContent() {
         val pickImagesIntent = Intent(Intent.ACTION_PICK)
         pickImagesIntent.type = "image/*"
         pickImagesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)

@@ -1,3 +1,5 @@
+
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -26,6 +28,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+    externalNativeBuild {
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -65,5 +70,9 @@ dependencies {
     // Kotlin
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.2")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.2")
+
+    implementation("com.writingminds:FFmpegAndroid:0.3.2")
+
+    implementation("com.theartofdev.edmodo:android-image-cropper:2.8.0")
 
 }

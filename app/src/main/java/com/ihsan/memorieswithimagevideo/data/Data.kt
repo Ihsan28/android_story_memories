@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 
 class Data {
+
     init {
         contentUris.observeForever { mapContentUrisToMediaItems() }
     }
@@ -16,8 +17,6 @@ class Data {
         var contentUris = MutableLiveData(mutableListOf<Uri>())
         var mediaItems: MutableList<Pair<Uri, MediaType>> = mutableListOf()
         var currentIndex = 0
-
-
 
         var animationDuration = 3000L
         var coverRevealDuration = 1000L
