@@ -1,13 +1,11 @@
 package com.ihsan.memorieswithimagevideo.data
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
+import com.ihsan.memorieswithimagevideo.Utils.MyApplication
 
 class Data {
-
-    init {
-        contentUris.observeForever { mapContentUrisToMediaItems() }
-    }
 
     companion object {
         val listOfAllowedVideoFormat = listOf("mp4", "mkv", "wmv")

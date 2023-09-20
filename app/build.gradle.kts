@@ -71,8 +71,17 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.2")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.2")
 
-    implementation("com.writingminds:FFmpegAndroid:0.3.2")
+//    implementation("fileTree(dir: 'libs', include: ['*.jar'])")
+//    implementation("com.writingminds:FFmpegAndroid:0.3.2")
+//
+//    implementation("com.theartofdev.edmodo:android-image-cropper:2.8.0")
 
-    implementation("com.theartofdev.edmodo:android-image-cropper:2.8.0")
+//    implementation("nl.bravobit:android-ffmpeg:1.1.7")
+
+//    implementation ("com.github.SimformSolutionsPvtLtd:SSffmpegVideoOperation:1.0.8")
+
+    implementation ("com.arthenica:mobile-ffmpeg-full:4.4")
+    implementation ("org.florescu.android.rangeseekbar:rangeseekbar-library:0.3.0")
+
 
 }

@@ -1,16 +1,11 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
-import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.VideoView
 import androidx.fragment.app.Fragment
-import com.github.hiteshsondhi88.libffmpeg.FFmpeg
-import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
@@ -40,29 +35,4 @@ class VideoMemoryFragment : Fragment() {
         }
         //}
     }
-    fun initialize() {
-        val ffmpeg = FFmpeg.getInstance(requireContext())
-        try {
-            ffmpeg.loadBinary(object : LoadBinaryResponseHandler() {
-                override fun onFinish() {
-                    super.onFinish()
-                }
-
-                override fun onSuccess() {
-                    super.onSuccess()
-                }
-
-                override fun onFailure() {
-                    super.onFailure()
-                }
-
-                override fun onStart() {
-                    super.onStart()
-                }
-            })
-        } catch (e: FFmpegNotSupportedException) {
-            Log.e("FFmpeg", "Your device does not support FFmpeg")
-        }
-    }
-
 }

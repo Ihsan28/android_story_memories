@@ -1,7 +1,11 @@
 package com.ihsan.memorieswithimagevideo
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.ihsan.memorieswithimagevideo.Utils.MyApplication
+import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenHeight
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
 

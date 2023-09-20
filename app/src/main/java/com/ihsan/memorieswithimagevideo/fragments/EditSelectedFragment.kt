@@ -3,11 +3,8 @@ package com.ihsan.memorieswithimagevideo.fragments
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.util.Log
-import android.util.LongSparseArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,21 +14,18 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler
-import com.github.hiteshsondhi88.libffmpeg.FFmpeg
-import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException
+
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.adapter.EditViewPagerAdapter
 import com.ihsan.memorieswithimagevideo.adapter.MiniPreviewAdapter
+import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
-import java.lang.Math.ceil
-import java.net.URI
 import java.util.Formatter
 
 private const val TAG = "EditSelectedFragment"
+
 class EditSelectedFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
     private lateinit var editViewPagerAdapter: EditViewPagerAdapter
@@ -50,17 +44,24 @@ class EditSelectedFragment : Fragment() {
                     for (i in 0 until clipData.itemCount) {
                         val mediaUri = clipData.getItemAt(i).uri
                         contentUris.value!!.add(mediaUri)
+                        val startTimeMs = "10" // Start time in milliseconds
+                        val endTimeMs = "20" // End time in milliseconds
+                        //videoCropper(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
                     }
-                    callViewPagerAdapter()
                 } else {
                     val mediaUri = result.data!!.data
                     if (mediaUri != null) {
                         contentUris.value!!.clear()
                         contentUris.value!!.add(mediaUri)
-                        callViewPagerAdapter()
+                        val startTimeMs = "10" // Start time in milliseconds
+                        val endTimeMs = "20" // End time in milliseconds
+                        //videoCropper(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
                     }
                 }
+                //update media items
+                Data().mapContentUrisToMediaItems()
                 currentIndex = 0
+                callViewPagerAdapter()
             }
         }
 
@@ -76,63 +77,9 @@ class EditSelectedFragment : Fragment() {
             formatter.format("%02d:%02d", minutes, seconds).toString()
         }
     }
-    private fun createPreview(viewWidth: Int) {
-        BackgroundExecutor.execute(object : BackgroundExecutor.Task("", 0L, "") {
-            override fun execute() {
-                try {
-                    val threshold = 11
-                    val thumbnails = LongSparseArray<Bitmap>()
-                    val mediaMetadataRetriever = MediaMetadataRetriever()
-                    mediaMetadataRetriever.setDataSource(context, videoUri)
-                    val videoLengthInMs = (Integer.parseInt(
-                        mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                    ) * 1000).toLong()
-                    val frameHeight = viewHeight
-                    val initialBitmap = mediaMetadataRetriever.getFrameAtTime(
-                        0,
-                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC
-                    )
-                    val frameWidth =
-                        ((initialBitmap.width.toFloat() / initialBitmap.height.toFloat()) * frameHeight.toFloat()).toInt()
-                    var numThumbs = ceil((viewWidth.toFloat() / frameWidth)).toInt()
-                    if (numThumbs < threshold) {
-                        numThumbs = threshold
-                    }
-                    val cropWidth = viewWidth / threshold
-                    val interval = videoLengthInMs / numThumbs
-                    for (i in 0 until numThumbs) {
-                        var bitmap = mediaMetadataRetriever.getFrameAtTime(
-                            i * interval,
-                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC
-                        )
-                        bitmap?.let {
-                            try {
-                                bitmap = Bitmap.createScaledBitmap(
-                                    bitmap,
-                                    frameWidth,
-                                    frameHeight,
-                                    false
-                                )
-                                bitmap = Bitmap.createBitmap(bitmap, 0, 0, cropWidth, bitmap.height)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "error while create bitmap: $e")
-                            }
-                            thumbnails.put(i.toLong(), bitmap)
-                        }
-                    }
-                    mediaMetadataRetriever.release()
-                    returnBitmaps(thumbnails)
-                } catch (e: Throwable) {
-                    Thread.getDefaultUncaughtExceptionHandler()
-                        .uncaughtException(Thread.currentThread(), e)
-                }
-            }
-        })
-    }
 
-
-
-    private fun videoCropper(input:String, output:String, startPos:String, endPos:String) {
+/*
+    private fun videoCropper(input: String, output: String, startPos: String, endPos: String) {
 
         val ffmpeg = FFmpeg.getInstance(requireContext())
         ffmpeg.loadBinary(object : FFmpegLoadBinaryResponseHandler {
@@ -146,38 +93,39 @@ class EditSelectedFragment : Fragment() {
                 //val compressVideoCommand = arrayOf("-i", input, "-vf", "scale=$w:$h", "-c:v", "libx264", "-preset", "veryslow", "-crf", "24", output)
                 //val removeAudioCommand = arrayOf("-i", input, "-an", output)
                 //val cropCommand = arrayOf("-i", input, "-filter:v", "crop=$w:$h:$x:$y", "-threads", "5", "-preset", "ultrafast", "-strict", "-2", "-c:a", "copy", output)
-                val trimCommand = arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
+                val trimCommand =
+                    arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
 
                 try {
-                        ffmpeg.execute(trimCommand, object : ExecuteBinaryResponseHandler() {
-                            override fun onSuccess(message: String?) {
-                                super.onSuccess(message)
-                                Log.d(TAG, "onSuccess: " + message!!)
-                            }
+                    ffmpeg.execute(trimCommand, object : ExecuteBinaryResponseHandler() {
+                        override fun onSuccess(message: String?) {
+                            super.onSuccess(message)
+                            Log.d(TAG, "onSuccess: " + message!!)
+                        }
 
-                            override fun onProgress(message: String?) {
-                                super.onProgress(message)
-                                Log.d(TAG, "onProgress: " + message!!)
-                            }
+                        override fun onProgress(message: String?) {
+                            super.onProgress(message)
+                            Log.d(TAG, "onProgress: " + message!!)
+                        }
 
-                            override fun onFailure(message: String?) {
-                                super.onFailure(message)
-                                Log.e(TAG, "onFailure: " + message!!)
-                            }
+                        override fun onFailure(message: String?) {
+                            super.onFailure(message)
+                            Log.e(TAG, "onFailure: " + message!!)
+                        }
 
-                            override fun onStart() {
-                                super.onStart()
-                                Log.d(TAG, "onStart")
-                            }
+                        override fun onStart() {
+                            super.onStart()
+                            Log.d(TAG, "onStart")
+                        }
 
-                            override fun onFinish() {
-                                super.onFinish()
-                                Log.d(TAG, "onFinish")
-                            }
-                        })
-                    } catch (e: FFmpegCommandAlreadyRunningException) {
-                        Log.e("FFmpeg", "FFmpeg runs already")
-                    }
+                        override fun onFinish() {
+                            super.onFinish()
+                            Log.d(TAG, "onFinish")
+                        }
+                    })
+                } catch (e: FFmpegCommandAlreadyRunningException) {
+                    Log.e("FFmpeg", "FFmpeg runs already")
+                }
             }
 
             override fun onFailure() {
@@ -189,7 +137,7 @@ class EditSelectedFragment : Fragment() {
         })
 
 
-    }
+    }*/
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -203,7 +151,7 @@ class EditSelectedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //Data().mapContentUrisToMediaItems()
+        Data().mapContentUrisToMediaItems()
 
         // Initialize
         viewPager = view.findViewById(R.id.viewPager)
@@ -252,6 +200,8 @@ class EditSelectedFragment : Fragment() {
             if (contentUris.value!!.isNotEmpty()) {
                 contentUris.value!!.removeAt(currentIndex)
                 editViewPagerAdapter.notifyDataSetChanged()
+                mediaItems.removeAt(currentIndex)
+                miniPreviewAdapter.notifyDataSetChanged()
             }
         }
     }
