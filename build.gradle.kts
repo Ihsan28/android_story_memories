@@ -1,15 +1,16 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript{
     repositories {
-        google()
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
-        mavenCentral()
+        google()
     }
+
     dependencies {
-        classpath("com.android.tools.build:gradle:4.1.3")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10")
+        classpath("com.android.tools.build:gradle:7.0.4")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0")
         classpath("androidx.navigation:navigation-safe-args-gradle-plugin:2.7.2")
+
     }
 }
 

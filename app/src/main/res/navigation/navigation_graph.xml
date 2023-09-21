@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigation_graph"
-    app:startDestination="@id/memoriesFragment">
+    app:startDestination="@id/videoEditingFragment">
 
     <fragment
         android:id="@+id/memoriesFragment"
@@ -28,4 +28,14 @@
         android:name="com.ihsan.memorieswithimagevideo.fragments.VideoMemoryFragment"
         android:label="fragment_video_memory"
         tools:layout="@layout/fragment_video_memory" />
+    <fragment
+        android:id="@+id/imageMemoryFragment"
+        android:name="com.ihsan.memorieswithimagevideo.fragments.ImageMemoryFragment"
+        android:label="fragment_image_memory"
+        tools:layout="@layout/fragment_image_memory" />
+    <fragment
+        android:id="@+id/videoEditingFragment"
+        android:name="com.ihsan.memorieswithimagevideo.fragments.VideoEditingFragment"
+        android:label="fragment_video_editing"
+        tools:layout="@layout/fragment_video_editing" />
 </navigation>

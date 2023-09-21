@@ -1,10 +1,10 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
+
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.adapter.EditViewPagerAdapter
 import com.ihsan.memorieswithimagevideo.adapter.MiniPreviewAdapter
@@ -22,7 +21,6 @@ import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
-import java.util.Formatter
 
 private const val TAG = "EditSelectedFragment"
 
@@ -56,6 +54,7 @@ class EditSelectedFragment : Fragment() {
                         val startTimeMs = "10" // Start time in milliseconds
                         val endTimeMs = "20" // End time in milliseconds
                         //videoCropper(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
+                        //trimVideo(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
                     }
                 }
                 //update media items
@@ -65,79 +64,69 @@ class EditSelectedFragment : Fragment() {
             }
         }
 
-    fun convertTimestampToString(timeInMs: Float): String {
-        val totalSeconds = (timeInMs / 1000).toInt()
-        val seconds = totalSeconds % 60
-        val minutes = totalSeconds / 60 % 60
-        val hours = totalSeconds / 3600
-        val formatter = Formatter()
-        return if (hours > 0) {
-            formatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
-        } else {
-            formatter.format("%02d:%02d", minutes, seconds).toString()
-        }
-    }
+    /*
 
-/*
-    private fun videoCropper(input: String, output: String, startPos: String, endPos: String) {
 
-        val ffmpeg = FFmpeg.getInstance(requireContext())
-        ffmpeg.loadBinary(object : FFmpegLoadBinaryResponseHandler {
-            override fun onFinish() {
-                Log.d("FFmpeg", "onFinish")
+            private fun videoCropper(input: String, output: String, startPos: String, endPos: String) {
+
+                val ffmpeg = FFmpeg.getInstance(requireContext())
+                ffmpeg.loadBinary(object : FFmpegLoadBinaryResponseHandler {
+                    override fun onFinish() {
+                        Log.d("FFmpeg", "onFinish")
+                    }
+
+                    override fun onSuccess() {
+                        Log.d("FFmpeg", "onSuccess")
+                        //val changePlaybacSpeedCcommand = arrayOf("-i", input, "-vf", "\"setpts=$scale*PTS\"", output)
+                        //val compressVideoCommand = arrayOf("-i", input, "-vf", "scale=$w:$h", "-c:v", "libx264", "-preset", "veryslow", "-crf", "24", output)
+                        //val removeAudioCommand = arrayOf("-i", input, "-an", output)
+                        //val cropCommand = arrayOf("-i", input, "-filter:v", "crop=$w:$h:$x:$y", "-threads", "5", "-preset", "ultrafast", "-strict", "-2", "-c:a", "copy", output)
+                        val trimCommand =
+                            arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
+
+                        try {
+                            ffmpeg.execute(trimCommand, object : ExecuteBinaryResponseHandler() {
+                                override fun onSuccess(message: String?) {
+                                    super.onSuccess(message)
+                                    Log.d(TAG, "onSuccess: " + message!!)
+                                }
+
+                                override fun onProgress(message: String?) {
+                                    super.onProgress(message)
+                                    Log.d(TAG, "onProgress: " + message!!)
+                                }
+
+                                override fun onFailure(message: String?) {
+                                    super.onFailure(message)
+                                    Log.e(TAG, "onFailure: " + message!!)
+                                }
+
+                                override fun onStart() {
+                                    super.onStart()
+                                    Log.d(TAG, "onStart")
+                                }
+
+                                override fun onFinish() {
+                                    super.onFinish()
+                                    Log.d(TAG, "onFinish")
+                                }
+                            })
+                        } catch (e: FFmpegCommandAlreadyRunningException) {
+                            Log.e("FFmpeg", "FFmpeg runs already")
+                        }
+                    }
+
+                    override fun onFailure() {
+                        Log.e("FFmpeg", "onFailure")
+                    }
+
+                    override fun onStart() {
+                    }
+                })
+
+
             }
-
-            override fun onSuccess() {
-                Log.d("FFmpeg", "onSuccess")
-                //val changePlaybacSpeedCcommand = arrayOf("-i", input, "-vf", "\"setpts=$scale*PTS\"", output)
-                //val compressVideoCommand = arrayOf("-i", input, "-vf", "scale=$w:$h", "-c:v", "libx264", "-preset", "veryslow", "-crf", "24", output)
-                //val removeAudioCommand = arrayOf("-i", input, "-an", output)
-                //val cropCommand = arrayOf("-i", input, "-filter:v", "crop=$w:$h:$x:$y", "-threads", "5", "-preset", "ultrafast", "-strict", "-2", "-c:a", "copy", output)
-                val trimCommand =
-                    arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
-
-                try {
-                    ffmpeg.execute(trimCommand, object : ExecuteBinaryResponseHandler() {
-                        override fun onSuccess(message: String?) {
-                            super.onSuccess(message)
-                            Log.d(TAG, "onSuccess: " + message!!)
-                        }
-
-                        override fun onProgress(message: String?) {
-                            super.onProgress(message)
-                            Log.d(TAG, "onProgress: " + message!!)
-                        }
-
-                        override fun onFailure(message: String?) {
-                            super.onFailure(message)
-                            Log.e(TAG, "onFailure: " + message!!)
-                        }
-
-                        override fun onStart() {
-                            super.onStart()
-                            Log.d(TAG, "onStart")
-                        }
-
-                        override fun onFinish() {
-                            super.onFinish()
-                            Log.d(TAG, "onFinish")
-                        }
-                    })
-                } catch (e: FFmpegCommandAlreadyRunningException) {
-                    Log.e("FFmpeg", "FFmpeg runs already")
-                }
-            }
-
-            override fun onFailure() {
-                Log.e("FFmpeg", "onFailure")
-            }
-
-            override fun onStart() {
-            }
-        })
-
-
-    }*/
+    */
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -152,6 +141,7 @@ class EditSelectedFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         Data().mapContentUrisToMediaItems()
+        //initialize()
 
         // Initialize
         viewPager = view.findViewById(R.id.viewPager)
@@ -205,6 +195,100 @@ class EditSelectedFragment : Fragment() {
             }
         }
     }
+    /*
+
+        private fun initialize() {
+            Toast.makeText(requireContext(), "init", Toast.LENGTH_SHORT).show()
+            val ffmpeg = FFmpeg.getInstance(requireContext())
+            try {
+                ffmpeg.loadBinary(object : LoadBinaryResponseHandler() {
+                    override fun onFinish() {
+                        super.onFinish()
+                        Toast.makeText(requireContext(), "Finish", Toast.LENGTH_SHORT).show()
+
+                    }
+
+                    override fun onSuccess() {
+                        super.onSuccess()
+                        Toast.makeText(requireContext(), "Success", Toast.LENGTH_SHORT).show()
+
+                    }
+
+                    override fun onFailure() {
+                        super.onFailure()
+                        Toast.makeText(requireContext(), "Failure", Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun onStart() {
+                        super.onStart()
+                        Toast.makeText(requireContext(), "Start", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            } catch (e: FFmpegNotSupportedException) {
+                Log.e("FFmpeg", "Your device does not support FFmpeg")
+            }
+        }
+
+        private fun trimVideo(input:String, output:String, startPos:String, endPos:String){
+            val ffmpeg = FFmpeg.getInstance(requireContext())
+            ffmpeg.loadBinary(object : FFmpegLoadBinaryResponseHandler {
+                override fun onFinish() {
+                    Log.d("FFmpeg", "onFinish")
+                }
+
+                override fun onSuccess() {
+                    Log.d("FFmpeg", "onSuccess")
+                    val command = arrayOf("-y", "-i", input, "-ss", startPos, "-to", endPos, "-c", "copy", output)
+
+                    try {
+                            ffmpeg.execute(command, object : ExecuteBinaryResponseHandler() {
+                                override fun onSuccess(message: String?) {
+                                    super.onSuccess(message)
+                                    Log.d(TAG, "onSuccess: " + message!!)
+                                    Toast.makeText(requireContext(), "onSuccess: $message", Toast.LENGTH_SHORT).show()
+                                }
+
+                                override fun onProgress(message: String?) {
+                                    super.onProgress(message)
+                                    Log.d(TAG, "onProgress: " + message!!)
+                                    Toast.makeText(requireContext(), "onProgress: $message", Toast.LENGTH_SHORT).show()
+
+                                }
+
+                                override fun onFailure(message: String?) {
+                                    super.onFailure(message)
+                                    Log.e(TAG, "onFailure: " + message!!)
+                                    Toast.makeText(requireContext(), "onFailure: $message", Toast.LENGTH_SHORT).show()
+
+                                }
+
+                                override fun onStart() {
+                                    super.onStart()
+                                    Log.d(TAG, "onStart")
+                                    Toast.makeText(requireContext(), "onStart", Toast.LENGTH_SHORT).show()
+                                }
+
+                                override fun onFinish() {
+                                    super.onFinish()
+                                    Log.d(TAG, "onFinish")
+                                    Toast.makeText(requireContext(), "onFinish", Toast.LENGTH_SHORT).show()
+                                }
+                            })
+                        } catch (e: FFmpegCommandAlreadyRunningException) {
+                            Log.e("FFmpeg", "FFmpeg runs already")
+                        Toast.makeText(requireContext(), "exception", Toast.LENGTH_SHORT).show()
+                        }
+                }
+
+                override fun onFailure() {
+                    Log.e("FFmpeg", "onFailure")
+                }
+
+                override fun onStart() {
+                }
+            })
+        }
+    */
 
     private fun pickMediaContent() {
         val pickImagesIntent = Intent(Intent.ACTION_PICK)
