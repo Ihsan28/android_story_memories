@@ -34,7 +34,6 @@ class VideoEditingFragment : Fragment() {
     private var startTime: Float = 0f
     private var endTime: Float = 0f
     private var duration: Float = 0f
-    var i=5
 
     // Create a scheduled executor service with a single thread
     val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
@@ -94,7 +93,7 @@ class VideoEditingFragment : Fragment() {
                         progressBar.progress = progress
                     }
                 }
-            }, 0, 1000, TimeUnit.MILLISECONDS)
+            }, 0, 100, TimeUnit.MILLISECONDS)
         }
     }
 
@@ -144,28 +143,26 @@ class VideoEditingFragment : Fragment() {
                     if (clipData != null) {
                         for (i in 0 until clipData.itemCount) {
                             val mediaUri = clipData.getItemAt(i).uri
-                            Data.contentUris.value!!.add(mediaUri)
                             videoPath = mediaUri
                             Toast.makeText(
                                 requireContext(),
                                 videoPath.toString(),
                                 Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            ).show()
+                            videoView.setVideoURI(videoPath)
                         }
                     } else {
                         val mediaUri = result.data!!.data
                         if (mediaUri != null) {
-                            Data.contentUris.value!!.clear()
-                            Data.contentUris.value!!.add(mediaUri)
                             videoPath = mediaUri
-                            videoView.setVideoURI(videoPath)
+
                             Toast.makeText(
                                 requireContext(),
                                 videoPath.toString(),
                                 Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            ).show()
+                            Log.d(TAG, "setPickMediaContract: ${videoPath.toString()}")
+                            videoView.setVideoURI(videoPath)
                         }
                     }
                     //update media items
@@ -200,6 +197,7 @@ class VideoEditingFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         executor.shutdown()
+        progressBarExecutor.shutdown()
         handler.removeCallbacksAndMessages(null)
     }
 }
