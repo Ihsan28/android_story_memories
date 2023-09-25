@@ -87,4 +87,8 @@ dependencies {
     implementation ("org.florescu.android.rangeseekbar:rangeseekbar-library:0.3.0")*/
 
     implementation("com.github.Jay-Goo:RangeSeekBar:v2.0.4")
+
+    //implementation("com.arthenica:ffmpeg-kit-full:4.5.1-1")
+
+    implementation("com.arthenica:mobile-ffmpeg-full:4.4")
 }
