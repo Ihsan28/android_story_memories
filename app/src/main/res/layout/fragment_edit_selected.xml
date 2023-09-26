@@ -13,40 +13,47 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-
-        <LinearLayout
-            android:id="@+id/buttonContainer"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/addButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="5dp"
+            android:backgroundTint="#4899F472"
+            android:text="@string/add" />
+        <Button
+            android:id="@+id/editButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_centerHorizontal="true"
+            android:layout_margin="5dp"
+            android:backgroundTint="#4872F4DA"
+            android:text="edit" />
 
-            <Button
-                android:id="@+id/addButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/add" />
+        <Button
+            android:id="@+id/removeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="5dp"
+            android:backgroundTint="#28FA4545"
+            android:text="@string/remove" />
 
-            <Button
-                android:id="@+id/removeButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/remove" />
-        </LinearLayout>
 
-        <!-- Add RecyclerView for mini preview -->
+        <!-- add recyclerView for mini preview -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/miniPreviewRecyclerView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@id/buttonContainer"
+            android:layout_above="@id/addButton"
             android:layout_alignParentStart="true"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="8dp"

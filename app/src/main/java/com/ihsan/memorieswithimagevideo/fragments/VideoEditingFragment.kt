@@ -1,8 +1,6 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
 import android.Manifest
-import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -15,17 +13,19 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.Toast
 import android.widget.VideoView
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.arthenica.mobileffmpeg.Config
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_CANCEL
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.jaygoo.widget.OnRangeChangedListener
 import com.jaygoo.widget.RangeSeekBar
 import java.io.File
@@ -38,7 +38,9 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "VideoEditingFragment"
+
 class VideoEditingFragment : Fragment() {
+    val args: VideoEditingFragmentArgs by navArgs()
     val REQUEST_PERMISSION_CODE = 1000
     private lateinit var videoView: VideoView
     private lateinit var videoUri: Uri
@@ -54,8 +56,6 @@ class VideoEditingFragment : Fragment() {
     val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     private val progressBarExecutor: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
-    private lateinit var pickMediaContract: ActivityResultLauncher<Intent>
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -66,17 +66,18 @@ class VideoEditingFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        videoView = view.findViewById(R.id.videoView)
         rangeSeekBar = view.findViewById(R.id.rangeSeekBar)
         progressBar = view.findViewById(R.id.progressBar)
         doneButton = view.findViewById(R.id.doneBtn)
+        videoView = view.findViewById(R.id.videoView)
 
-        //pick media content
-        setPickMediaContract()
-        pickMediaContent()
+        //set video uri
+        videoUri = Data.contentUris.value?.get(args.videoIndex) ?: Uri.EMPTY
+        videoView.setVideoURI(videoUri)
 
         videoViewSetOnPrepareListener()
 
+        //set range seek bar listener
         rangeSeekBarListener()
 
         videoView.setOnCompletionListener {
@@ -86,11 +87,25 @@ class VideoEditingFragment : Fragment() {
 
         doneButton.setOnClickListener {
             // Check if we have permission to read and write to external storage
-            if (ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    requireActivity(),
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    requireActivity(),
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
 
                 // If permissions are not granted, request them
-                ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_PERMISSION_CODE)
+                ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    arrayOf(
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ),
+                    REQUEST_PERMISSION_CODE
+                )
             } else {
                 // Permission is already granted, you can proceed with the operation
                 executeFFmpegCommandToTrimVideo()
@@ -119,17 +134,48 @@ class VideoEditingFragment : Fragment() {
         }
     }
 
-    private fun executeFFmpegCommandToTrimVideo(){
+    private fun navigateToHomeFragment() {
+        contentUris.value?.set(currentIndex, Uri.parse(output))
+        Data().mapContentUrisToMediaItems()
+
+        //navigate with args
+        val action =
+            VideoEditingFragmentDirections.actionVideoEditingFragmentToEditSelectedFragment()
+        findNavController().navigate(action)
+
+        /*//navigate to EditSelectedFragment
+        val bundle = Bundle()
+        bundle.putString("videoUri", output)
+        val fragment = EditSelectedFragment()
+        fragment.arguments = bundle
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment).commit()*/
+    }
+
+    private fun executeFFmpegCommandToTrimVideo() {
         Toast.makeText(requireContext(), "Done", Toast.LENGTH_SHORT).show()
 
-        val videoPath = getVideoFileFromContentUri(videoUri) // Get the file path from the content Uri
+        val videoPath =
+            getVideoFileFromContentUri(videoUri) // Get the file path from the content Uri
 
         val input = videoPath.toString()
-        val command = arrayOf("-y", "-i", videoPath, "-ss", startTime.toString(), "-to", endTime.toString(), "-c", "copy", output)
+        val command = arrayOf(
+            "-y",
+            "-i",
+            videoPath,
+            "-ss",
+            startTime.toString(),
+            "-to",
+            endTime.toString(),
+            "-c",
+            "copy",
+            output
+        )
 
-        FFmpeg.executeAsync(command) { executionId, returnCode ->
+        FFmpeg.executeAsync(command) { _, returnCode ->
             if (returnCode == RETURN_CODE_SUCCESS) {
                 Log.i(Config.TAG, "Async command execution completed successfully.")
+                navigateToHomeFragment()
             } else if (returnCode == RETURN_CODE_CANCEL) {
                 Log.i(Config.TAG, "Async command execution cancelled by user.")
             } else {
@@ -159,7 +205,8 @@ class VideoEditingFragment : Fragment() {
 
     private fun getVideoFileFromContentUri(contentUri: Uri): String? {
         val projection = arrayOf(MediaStore.Video.Media.DATA)
-        val cursor = requireContext().contentResolver.query(contentUri, projection, null, null, null)
+        val cursor =
+            requireContext().contentResolver.query(contentUri, projection, null, null, null)
         val columnIndex = cursor?.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
         cursor?.moveToFirst()
         val videoPath = cursor?.getString(columnIndex ?: -1)
@@ -189,7 +236,8 @@ class VideoEditingFragment : Fragment() {
             progressBarExecutor.scheduleAtFixedRate({
                 requireActivity().runOnUiThread {
                     if (videoView.currentPosition / 1000f <= endTime) {
-                        val progress = (((videoView.currentPosition.toFloat()-startTime*1000) / (duration * 1000)) * 100).toInt()
+                        val progress =
+                            (((videoView.currentPosition.toFloat() - startTime * 1000) / (duration * 1000)) * 100).toInt()
                         progressBar.progress = progress
                     }
                 }
@@ -209,7 +257,7 @@ class VideoEditingFragment : Fragment() {
                 endTime = rightValue
                 duration = endTime - startTime
                 videoView.seekTo(startTime.toInt() * 1000)
-                        Log.d(TAG, "onRangeChanged: updated onRangeChanged")
+                Log.d(TAG, "onRangeChanged: updated onRangeChanged")
 
                 executor.scheduleAtFixedRate({
                     // Check if the current position is greater than or equal to endTime
@@ -231,67 +279,6 @@ class VideoEditingFragment : Fragment() {
                 videoView.start()
             }
         })
-    }
-
-    private fun setPickMediaContract() {
-        pickMediaContract =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                    val clipData = result.data!!.clipData
-                    //contentUris.value!!.clear()
-
-                    if (clipData != null) {
-                        for (i in 0 until clipData.itemCount) {
-                            val mediaUri = clipData.getItemAt(i).uri
-                            videoUri = mediaUri
-                            Toast.makeText(
-                                requireContext(),
-                                videoUri.toString(),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            videoView.setVideoURI(videoUri)
-                        }
-                    } else {
-                        val mediaUri = result.data!!.data
-                        if (mediaUri != null) {
-                            videoUri = mediaUri
-
-                            Toast.makeText(
-                                requireContext(),
-                                videoUri.toString(),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            Log.d(TAG, "setPickMediaContract: ${videoUri.toString()}")
-                            videoView.setVideoURI(videoUri)
-                        }
-                    }
-                    //update media items
-                    Data().mapContentUrisToMediaItems()
-                }
-            }
-    }
-
-    private fun pickMediaContent() {
-        val pickImagesIntent = Intent(Intent.ACTION_PICK)
-        pickImagesIntent.type = "image/*"
-        pickImagesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-
-        val pickVideosIntent = Intent(Intent.ACTION_PICK)
-        pickVideosIntent.type = "video/*"
-        pickVideosIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-
-        val chooserIntent = Intent.createChooser(
-            pickImagesIntent,
-            "Select Images and Videos"
-        )
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickVideosIntent))
-
-        try {
-            pickMediaContract.launch(chooserIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle the exception, possibly by displaying an error message.
-        }
     }
 
     override fun onDestroy() {

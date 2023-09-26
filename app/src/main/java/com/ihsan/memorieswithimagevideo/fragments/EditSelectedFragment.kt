@@ -4,13 +4,19 @@ package com.ihsan.memorieswithimagevideo.fragments
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -21,6 +27,7 @@ import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
+import com.ihsan.memorieswithimagevideo.data.MediaType
 
 private const val TAG = "EditSelectedFragment"
 
@@ -30,43 +37,11 @@ class EditSelectedFragment : Fragment() {
     private lateinit var miniPreviewRecyclerView: RecyclerView
     private lateinit var miniPreviewAdapter: MiniPreviewAdapter
 
-    //pick image launcher contract for image picker intent
-    @SuppressLint("NotifyDataSetChanged")
-    private val pickMediaContract =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                val clipData = result.data!!.clipData
-                //contentUris.value!!.clear()
+    private lateinit var pickMediaContract: ActivityResultLauncher<Intent>
+    private var currentContentUri = contentUris.value?.get(currentIndex)
 
-                if (clipData != null) {
-                    for (i in 0 until clipData.itemCount) {
-                        val mediaUri = clipData.getItemAt(i).uri
-                        contentUris.value!!.add(mediaUri)
-                        val startTimeMs = "10" // Start time in milliseconds
-                        val endTimeMs = "20" // End time in milliseconds
-                        //videoCropper(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
-                    }
-                } else {
-                    val mediaUri = result.data!!.data
-                    if (mediaUri != null) {
-                        contentUris.value!!.clear()
-                        contentUris.value!!.add(mediaUri)
-                        val startTimeMs = "10" // Start time in milliseconds
-                        val endTimeMs = "20" // End time in milliseconds
-                        //videoCropper(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
-                        //trimVideo(mediaUri.toString(),mediaUri.toString(),startTimeMs,endTimeMs)
-                    }
-                }
-                //update media items
-                Data().mapContentUrisToMediaItems()
-                currentIndex = 0
-                callViewPagerAdapter()
-            }
-        }
 
     /*
-
-
             private fun videoCropper(input: String, output: String, startPos: String, endPos: String) {
 
                 val ffmpeg = FFmpeg.getInstance(requireContext())
@@ -123,8 +98,6 @@ class EditSelectedFragment : Fragment() {
                     override fun onStart() {
                     }
                 })
-
-
             }
     */
 
@@ -140,20 +113,24 @@ class EditSelectedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Data().mapContentUrisToMediaItems()
-        //initialize()
-
         // Initialize
         viewPager = view.findViewById(R.id.viewPager)
         miniPreviewRecyclerView = view.findViewById(R.id.miniPreviewRecyclerView)
         val addButton = view.findViewById<Button>(R.id.addButton)
         val removeButton = view.findViewById<Button>(R.id.removeButton)
+        val editButton= view.findViewById<Button>(R.id.editButton)
+        Data().mapContentUrisToMediaItems()
+
+        pickMediaContract = pickMediaContract()
+
+        //initialize()
 
         // Register a callback to be invoked when the ViewPager2 changes its current item
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 currentIndex = position // Update the current index
-                val centeredPosition = calculateCenteredPosition()
+                //val centeredPosition = calculateCenteredPosition()
+                val centeredPosition = currentIndex
                 scrollMiniPreviewToCenteredPosition(centeredPosition)
             }
         })
@@ -179,6 +156,8 @@ class EditSelectedFragment : Fragment() {
         miniPreviewAdapter.setOnItemClickListener { position ->
             // Set the ViewPager2's current item based on the selected position
             viewPager.currentItem = position
+            currentIndex = position
+            scrollMiniPreviewToCenteredPosition(position)
         }
 
         addButton.setOnClickListener {
@@ -194,9 +173,24 @@ class EditSelectedFragment : Fragment() {
                 miniPreviewAdapter.notifyDataSetChanged()
             }
         }
+
+        editButton.setOnClickListener{
+            //navigate to edit fragment
+            Toast.makeText(requireContext(), mediaItems[currentIndex].first.toString(), Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex]}")
+            Log.d(TAG, "onViewCreated: ${contentUris.value!![currentIndex]}")
+            Log.d(TAG, "onViewCreated: $currentIndex")
+            Log.d(TAG, "onViewCreated: $mediaItems")
+            if (mediaItems[currentIndex].second == MediaType.VIDEO) {
+                val action = EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
+                    currentIndex)
+                findNavController().navigate(action)
+            }else if (mediaItems[currentIndex].second == MediaType.IMAGE){
+                Toast.makeText(requireContext(), "Not available ${mediaItems[currentIndex].second}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     /*
-
         private fun initialize() {
             Toast.makeText(requireContext(), "init", Toast.LENGTH_SHORT).show()
             val ffmpeg = FFmpeg.getInstance(requireContext())
@@ -313,13 +307,38 @@ class EditSelectedFragment : Fragment() {
         }
     }
 
+    private fun pickMediaContract(): ActivityResultLauncher<Intent>{
+        return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                val clipData = result.data!!.clipData
+                //contentUris.value!!.clear()
+
+                if (clipData != null) {
+                    for (i in 0 until clipData.itemCount) {
+                        val mediaUri = clipData.getItemAt(i).uri
+                        contentUris.value!!.add(mediaUri)
+                    }
+                } else {
+                    val mediaUri = result.data!!.data
+                    if (mediaUri != null) {
+                        contentUris.value!!.add(mediaUri)
+                    }
+                }
+                //update media items
+                Data().mapContentUrisToMediaItems()
+                currentIndex = 0
+                callViewPagerAdapter()
+            }
+        }
+    }
+
     private fun callViewPagerAdapter() {
         editViewPagerAdapter = contentUris.value?.let { EditViewPagerAdapter(it) }!!
         viewPager.adapter = editViewPagerAdapter
     }
 
     private fun calculateCenteredPosition(): Int {
-        val currentContentUri =
+         currentContentUri =
             contentUris.value?.get(currentIndex) // Current content URI in ViewPager
         for ((index, pair) in mediaItems.withIndex()) {
             if (pair.first == currentContentUri) {
