@@ -26,6 +26,8 @@ import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
+import com.ihsan.memorieswithimagevideo.data.MediaType
 import com.jaygoo.widget.OnRangeChangedListener
 import com.jaygoo.widget.RangeSeekBar
 import java.io.File
@@ -136,20 +138,12 @@ class VideoEditingFragment : Fragment() {
 
     private fun navigateToHomeFragment() {
         contentUris.value?.set(currentIndex, Uri.parse(output))
-        Data().mapContentUrisToMediaItems()
+        mediaItems[currentIndex] = Pair(Uri.parse(output),MediaType.VIDEO)
 
         //navigate with args
         val action =
             VideoEditingFragmentDirections.actionVideoEditingFragmentToEditSelectedFragment()
         findNavController().navigate(action)
-
-        /*//navigate to EditSelectedFragment
-        val bundle = Bundle()
-        bundle.putString("videoUri", output)
-        val fragment = EditSelectedFragment()
-        fragment.arguments = bundle
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment).commit()*/
     }
 
     private fun executeFFmpegCommandToTrimVideo() {

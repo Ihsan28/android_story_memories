@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.CustomPageTransformer
@@ -87,11 +88,8 @@ class MemoriesFragment : Fragment() {
         }
 
         editButton.setOnClickListener {
-            val fragment = EditSelectedFragment()
-            val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragment_container, fragment)
-            transaction.addToBackStack(null)
-            transaction.commit()
+            val action = MemoriesFragmentDirections.actionMemoriesFragmentToEditSelectedFragment()
+            findNavController().navigate(action)
         }
 
         exportButton.setOnClickListener {

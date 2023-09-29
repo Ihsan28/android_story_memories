@@ -19,47 +19,59 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="1.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+            android:scaleType="centerCrop"/>
 
         <ImageView
-            android:id="@+id/collegeImageView"
+            android:id="@+id/collageImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+            android:scaleType="centerCrop"/>
 
         <ImageView
-            android:id="@+id/collegeImageView_1"
+            android:id="@+id/collageImageView_1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+            android:scaleType="centerCrop"/>
 
         <ImageView
-            android:id="@+id/collegeImageView_2"
+            android:id="@+id/collageImageView_2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+            android:scaleType="centerCrop"/>
 
         <ImageView
-            android:id="@+id/collegeImageView_3"
+            android:id="@+id/collageImageView_3"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
-        <!--cover of all images-->
+            android:scaleType="centerCrop"/>
+
+        <!--cover imageview-->
         <ImageView
             android:id="@+id/coverImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedCorners" />
+            android:scaleType="centerCrop"/>
+
+        <!--video view-->
+        <VideoView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/videoView"
+            android:alpha="0.0"
+            android:scaleType="centerCrop"/>
+
+        <include
+            android:id="@+id/double_image_layout"
+            android:visibility="gone"
+            layout="@layout/memory_page_2_images" />
+        <include
+            android:id="@+id/triple_image_layout"
+            android:visibility="gone"
+            layout="@layout/memory_page_3_images" />
     </androidx.cardview.widget.CardView>
 </RelativeLayout>

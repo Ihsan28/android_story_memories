@@ -47,7 +47,6 @@
             android:backgroundTint="#28FA4545"
             android:text="@string/remove" />
 
-
         <!-- add recyclerView for mini preview -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/miniPreviewRecyclerView"

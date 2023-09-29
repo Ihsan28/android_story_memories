@@ -4,7 +4,6 @@ package com.ihsan.memorieswithimagevideo.fragments
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,8 +14,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -118,7 +116,7 @@ class EditSelectedFragment : Fragment() {
         miniPreviewRecyclerView = view.findViewById(R.id.miniPreviewRecyclerView)
         val addButton = view.findViewById<Button>(R.id.addButton)
         val removeButton = view.findViewById<Button>(R.id.removeButton)
-        val editButton= view.findViewById<Button>(R.id.editButton)
+        val editButton = view.findViewById<Button>(R.id.editButton)
         Data().mapContentUrisToMediaItems()
 
         pickMediaContract = pickMediaContract()
@@ -174,19 +172,29 @@ class EditSelectedFragment : Fragment() {
             }
         }
 
-        editButton.setOnClickListener{
+        editButton.setOnClickListener {
             //navigate to edit fragment
-            Toast.makeText(requireContext(), mediaItems[currentIndex].first.toString(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                mediaItems[currentIndex].first.toString(),
+                Toast.LENGTH_SHORT
+            ).show()
             Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex]}")
             Log.d(TAG, "onViewCreated: ${contentUris.value!![currentIndex]}")
             Log.d(TAG, "onViewCreated: $currentIndex")
             Log.d(TAG, "onViewCreated: $mediaItems")
             if (mediaItems[currentIndex].second == MediaType.VIDEO) {
-                val action = EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
-                    currentIndex)
-                findNavController().navigate(action)
-            }else if (mediaItems[currentIndex].second == MediaType.IMAGE){
-                Toast.makeText(requireContext(), "Not available ${mediaItems[currentIndex].second}", Toast.LENGTH_SHORT).show()
+                val action =
+                    EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
+                        currentIndex
+                    )
+                view.findNavController().navigate(action)
+            } else if (mediaItems[currentIndex].second == MediaType.IMAGE) {
+                Toast.makeText(
+                    requireContext(),
+                    "Not available ${mediaItems[currentIndex].second}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -307,7 +315,7 @@ class EditSelectedFragment : Fragment() {
         }
     }
 
-    private fun pickMediaContract(): ActivityResultLauncher<Intent>{
+    private fun pickMediaContract(): ActivityResultLauncher<Intent> {
         return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
                 val clipData = result.data!!.clipData
@@ -338,7 +346,7 @@ class EditSelectedFragment : Fragment() {
     }
 
     private fun calculateCenteredPosition(): Int {
-         currentContentUri =
+        currentContentUri =
             contentUris.value?.get(currentIndex) // Current content URI in ViewPager
         for ((index, pair) in mediaItems.withIndex()) {
             if (pair.first == currentContentUri) {

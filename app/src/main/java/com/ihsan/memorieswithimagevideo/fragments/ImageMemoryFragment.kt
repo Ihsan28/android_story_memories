@@ -27,7 +27,7 @@ class ImageMemoryFragment : Fragment() {
     private lateinit var collageImageView_1: ImageView
     private lateinit var collageImageView_2: ImageView
     private lateinit var collageImageView_3: ImageView
-    var currentContentUri: Uri = Uri.EMPTY
+    private var currentContentUri: Uri = Uri.EMPTY
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -41,10 +41,10 @@ class ImageMemoryFragment : Fragment() {
 
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
-        collageImageView = view.findViewById(R.id.collegeImageView)
-        collageImageView_1 = view.findViewById(R.id.collegeImageView_1)
-        collageImageView_2 = view.findViewById(R.id.collegeImageView_2)
-        collageImageView_3 = view.findViewById(R.id.collegeImageView_3)
+        collageImageView = view.findViewById(R.id.collageImageView)
+        collageImageView_1 = view.findViewById(R.id.collageImageView_1)
+        collageImageView_2 = view.findViewById(R.id.collageImageView_2)
+        collageImageView_3 = view.findViewById(R.id.collageImageView_3)
 
         showNextImage()
     }
