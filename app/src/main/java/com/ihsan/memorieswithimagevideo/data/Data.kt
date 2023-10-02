@@ -1,10 +1,13 @@
 package com.ihsan.memorieswithimagevideo.data
 
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
 import com.ihsan.memorieswithimagevideo.Utils.MyApplication
+import java.io.File
 
 private const val TAG = "Data"
 
@@ -39,15 +42,10 @@ class Data {
                 val mimeType = MyApplication.instance.contentResolver.getType(it)
                 if (mimeType != null) {
                     when {
-                        mimeType.startsWith("image") -> Pair(it, MediaType.IMAGE)
-                        mimeType.startsWith("video") -> Pair(it, MediaType.VIDEO)
+                        mimeType.startsWith("image") -> Pair(getMediaFileFromContentUri(it,MediaType.IMAGE)!!, MediaType.IMAGE)
+                        mimeType.startsWith("video") -> Pair(getMediaFileFromContentUri(it,MediaType.VIDEO)!!, MediaType.VIDEO)
                         else -> {
-                            Toast.makeText(
-                                MyApplication.instance,
-                                "File format not supported: $mimeType",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            Log.d(
+                            Log.e(
                                 TAG,
                                 "mapContentUrisToMediaItems: File format not supported: $mimeType"
                             )
@@ -55,13 +53,7 @@ class Data {
                         }
                     }
                 } else {
-                    Toast.makeText(
-                        MyApplication.instance,
-                        "File format not supported: $ext",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    Log.d(
+                    Log.e(
                         TAG,
                         "mapContentUrisToMediaItems: File format not supported: $ext"
                     )
@@ -71,5 +63,30 @@ class Data {
             }
         })
         mediaItems.map { Log.d(TAG, "mapContentUrisToMediaItems: $it") }
+    }
+
+    private fun getMediaFileFromContentUri(contentUri: Uri, mediaType:MediaType): Uri? {
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = MyApplication.instance.contentResolver.query(contentUri, projection, null, null, null)
+
+        cursor?.use {cursor1->
+
+            val columnIndex =if (mediaType == MediaType.VIDEO) {
+                cursor1.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+            } else {
+                cursor1.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            }
+
+            if (cursor1.moveToFirst()) {
+                val mediaPath = cursor1.getString(columnIndex)
+                return if (!mediaPath.isNullOrEmpty()) {
+                    File(mediaPath).toUri()
+                } else {
+                    null
+                }
+            }
+        }
+
+        return null
     }
 }

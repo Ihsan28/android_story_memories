@@ -1,5 +1,8 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,17 +10,24 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.coverRevealDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenHeight
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
+import com.ihsan.memorieswithimagevideo.data.MediaType
 import jp.wasabeef.transformers.glide.BlurTransformation
 
 class ImageMemoryFragment : Fragment() {
@@ -27,7 +37,9 @@ class ImageMemoryFragment : Fragment() {
     private lateinit var collageImageView_1: ImageView
     private lateinit var collageImageView_2: ImageView
     private lateinit var collageImageView_3: ImageView
+    private lateinit var videoView:VideoView
     private var currentContentUri: Uri = Uri.EMPTY
+    private var i = 0
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -45,56 +57,63 @@ class ImageMemoryFragment : Fragment() {
         collageImageView_1 = view.findViewById(R.id.collageImageView_1)
         collageImageView_2 = view.findViewById(R.id.collageImageView_2)
         collageImageView_3 = view.findViewById(R.id.collageImageView_3)
+        videoView = view.findViewById(R.id.videoView)
 
         showNextImage()
     }
 
-    var i = 0;
+
     private fun showNextImage() {
         if (contentUris.value!!.isNotEmpty()) {
             //Increment the index
             nextImageUri()
 
+            if(mediaItems[currentIndex].second == MediaType.VIDEO){
+                Toast.makeText(requireContext(), "video", Toast.LENGTH_SHORT).show()
+                setVideoViewShapeWithPosition()
+                return
+            }
+
+            Toast.makeText(requireContext(), currentContentUri.toString(), Toast.LENGTH_SHORT).show()
+
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
             when (animations[i++ % animations.size]) {
                 "1" -> {
-                    //Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
                     transitionWithCollage()
                 }
 
                 "2" -> {
-                    //Toast.makeText(requireContext(), "2", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDownCollage()
                 }
 
                 "3" -> {
-                    //Toast.makeText(requireContext(), "3", Toast.LENGTH_SHORT).show()
                     transitionWithScaleUp()
                 }
 
                 "4" -> {
-                    //Toast.makeText(requireContext(), "4", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDown()
                 }
 
                 "5" -> {
-                    //Toast.makeText(requireContext(), "5", Toast.LENGTH_SHORT).show()
                     transitionWithBlurry()
                 }
 
                 "6" -> {
-                    //Toast.makeText(requireContext(), "6", Toast.LENGTH_SHORT).show()
                     transitionWithScaleDownWithSlideInOut()
                 }
 
                 "7" -> {
-                    //Toast.makeText(requireContext(), "7", Toast.LENGTH_SHORT).show()
                     transitionWithMoveWithInitialZoom()
                 }
 
                 "8" -> {
-                    //Toast.makeText(requireContext(), "8", Toast.LENGTH_SHORT).show()
                     transitionWithScaleUpWithMove()
+                }
+                "9" -> {
+                    setVideoViewShapeWithPosition()
+                }
+                else -> {
+                    Toast.makeText(requireContext(), "No animation", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -120,6 +139,43 @@ class ImageMemoryFragment : Fragment() {
         imageView.translationX = translationX
         imageView.translationY = translationY
         imageView.rotation = rotation
+    }
+
+    private fun setVideoViewShapeWithPosition(
+    ) {
+        videoView.setVideoURI(currentContentUri)
+        //retrieve a frame from the end of the video
+        //val fastFrame= retrieveFrameFromVideo(currentContentUri, 0)
+
+
+        videoView.setOnPreparedListener {
+            val lastFrame= retrieveFrameFromVideo(mediaItems[currentIndex].first, videoView.duration.toLong())
+            videoView.alpha = 1f
+            currentImageView.alpha = 0f
+            coverImageView.alpha = 0f
+            currentImageView.setImageURI(null)
+            coverImageView.setImageURI(lastFrame?.let { it1 -> Uri.parse(it1.toString()) })
+            videoView.start()
+        }
+        videoView.setOnCompletionListener {
+            videoView.alpha = 0f
+            coverImageView.alpha = 1f
+            currentImageView.alpha = 1f
+            showNextImage()
+        }
+    }
+
+    private fun retrieveFrameFromVideo(videoUri: Uri, timeInMillis: Long): Bitmap? {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(videoUri.path)
+
+        // Retrieve a frame at the specified time (in microseconds)
+        val frame = retriever.getFrameAtTime(timeInMillis * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+
+        // Release the retriever
+        retriever.release()
+
+        return frame
     }
 
     private fun setImageFromContentUri(imageView: ImageView, contentUri: Uri) {

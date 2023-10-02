@@ -19,35 +19,35 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="1.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <ImageView
             android:id="@+id/collageImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <ImageView
             android:id="@+id/collageImageView_1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <ImageView
             android:id="@+id/collageImageView_2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <ImageView
             android:id="@+id/collageImageView_3"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <!--cover imageview-->
         <ImageView
@@ -55,23 +55,31 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <!--video view-->
-        <VideoView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/videoView"
-            android:alpha="0.0"
-            android:scaleType="centerCrop"/>
+            android:gravity="center">
+
+            <VideoView
+                android:id="@+id/videoView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="@color/colorPrimaryDark"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+        </LinearLayout>
 
         <include
             android:id="@+id/double_image_layout"
-            android:visibility="gone"
-            layout="@layout/memory_page_2_images" />
+            layout="@layout/memory_page_2_images"
+            android:visibility="gone" />
+
         <include
             android:id="@+id/triple_image_layout"
-            android:visibility="gone"
-            layout="@layout/memory_page_3_images" />
+            layout="@layout/memory_page_3_images"
+            android:visibility="gone" />
     </androidx.cardview.widget.CardView>
 </RelativeLayout>

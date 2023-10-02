@@ -74,7 +74,7 @@ class VideoEditingFragment : Fragment() {
         videoView = view.findViewById(R.id.videoView)
 
         //set video uri
-        videoUri = Data.contentUris.value?.get(args.videoIndex) ?: Uri.EMPTY
+        videoUri = mediaItems[args.videoIndex].first
         videoView.setVideoURI(videoUri)
 
         videoViewSetOnPrepareListener()
@@ -149,14 +149,10 @@ class VideoEditingFragment : Fragment() {
     private fun executeFFmpegCommandToTrimVideo() {
         Toast.makeText(requireContext(), "Done", Toast.LENGTH_SHORT).show()
 
-        val videoPath =
-            getVideoFileFromContentUri(videoUri) // Get the file path from the content Uri
-
-        val input = videoPath.toString()
         val command = arrayOf(
             "-y",
             "-i",
-            videoPath,
+            videoUri.path,
             "-ss",
             startTime.toString(),
             "-to",
@@ -196,23 +192,6 @@ class VideoEditingFragment : Fragment() {
         }
         return null
     }
-
-    private fun getVideoFileFromContentUri(contentUri: Uri): String? {
-        val projection = arrayOf(MediaStore.Video.Media.DATA)
-        val cursor =
-            requireContext().contentResolver.query(contentUri, projection, null, null, null)
-        val columnIndex = cursor?.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
-        cursor?.moveToFirst()
-        val videoPath = cursor?.getString(columnIndex ?: -1)
-        cursor?.close()
-
-        return if (!videoPath.isNullOrEmpty()) {
-            File(videoPath).path
-        } else {
-            null
-        }
-    }
-
 
     private fun videoViewSetOnPrepareListener() {
         videoView.setOnPreparedListener {

@@ -3,22 +3,27 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     tools:context=".fragments.VideoEditingFragment">
 
-    <VideoView
-        android:id="@+id/videoView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="100dp"
-        android:foregroundGravity="center"
-        android:scaleType="centerCrop" />
+        android:gravity="center">
+
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
 
     <Button
         android:id="@+id/doneBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/videoView"
-        android:layout_alignParentEnd="true"
+        android:layout_centerInParent="true"
         android:layout_marginEnd="20dp"
         android:backgroundTint="#121C1B1F"
         android:text="DONE" />

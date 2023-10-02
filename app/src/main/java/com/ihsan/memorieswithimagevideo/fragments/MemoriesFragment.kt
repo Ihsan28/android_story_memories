@@ -15,6 +15,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.CustomPageTransformer
 import com.ihsan.memorieswithimagevideo.adapter.ViewPagerAdapter
+import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 
@@ -47,6 +48,7 @@ class MemoriesFragment : Fragment() {
                     }
                 }
                 currentIndex = 0
+                Data().mapContentUrisToMediaItems()
             }
         }
 
@@ -93,6 +95,8 @@ class MemoriesFragment : Fragment() {
         }
 
         exportButton.setOnClickListener {
+            // need to change to nav controller
+
             val fragment = VideoMemoryFragment()
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
             transaction.replace(R.id.fragment_container, fragment)

@@ -140,6 +140,7 @@ class EditSelectedFragment : Fragment() {
 
         // Set up the ViewPager2 with the editViewPagerAdapter
         editViewPagerAdapter = contentUris.value?.let { EditViewPagerAdapter(it) }!!
+        //editViewPagerAdapter= EditViewPagerAdapter(mediaItems.map { it.first })
         viewPager.adapter = editViewPagerAdapter
 
         // Set up the mini preview RecyclerView with the miniPreviewAdapter
@@ -174,15 +175,8 @@ class EditSelectedFragment : Fragment() {
 
         editButton.setOnClickListener {
             //navigate to edit fragment
-            Toast.makeText(
-                requireContext(),
-                mediaItems[currentIndex].first.toString(),
-                Toast.LENGTH_SHORT
-            ).show()
             Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex]}")
-            Log.d(TAG, "onViewCreated: ${contentUris.value!![currentIndex]}")
-            Log.d(TAG, "onViewCreated: $currentIndex")
-            Log.d(TAG, "onViewCreated: $mediaItems")
+
             if (mediaItems[currentIndex].second == MediaType.VIDEO) {
                 val action =
                     EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
@@ -195,6 +189,7 @@ class EditSelectedFragment : Fragment() {
                     "Not available ${mediaItems[currentIndex].second}",
                     Toast.LENGTH_SHORT
                 ).show()
+                Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex].second}")
             }
         }
     }
