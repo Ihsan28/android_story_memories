@@ -20,6 +20,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.ihsan.memorieswithimagevideo.R
+import com.ihsan.memorieswithimagevideo.Utils.VideoCapture
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.coverRevealDuration
@@ -39,6 +40,7 @@ class ImageMemoryFragment : Fragment() {
     private lateinit var collageImageView_3: ImageView
     private lateinit var videoView:VideoView
     private var currentContentUri: Uri = Uri.EMPTY
+    private lateinit var recordAnimation: VideoCapture
     private var i = 0
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,6 +53,7 @@ class ImageMemoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        recordAnimation = VideoCapture(view.findViewById(R.id.cardViewAnimationRoot))
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
         collageImageView = view.findViewById(R.id.collageImageView)
@@ -60,11 +63,17 @@ class ImageMemoryFragment : Fragment() {
         videoView = view.findViewById(R.id.videoView)
 
         showNextImage()
+        recordAnimation.startRecordingUsingFFMPEG()
     }
-
 
     private fun showNextImage() {
         if (contentUris.value!!.isNotEmpty()) {
+            if (!recordAnimation.isFfmpegRecorderStarted){
+                Toast.makeText(requireContext(), "recording", Toast.LENGTH_SHORT).show()
+                recordAnimation.startRecordingUsingFFMPEG()
+            }else{
+                recordAnimation.stopRecordingUsingFFMPEG()
+            }
             //Increment the index
             nextImageUri()
 

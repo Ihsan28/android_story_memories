@@ -7,6 +7,7 @@
     tools:context=".fragments.ImageMemoryFragment">
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewAnimationRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginHorizontal="1dp"
