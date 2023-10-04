@@ -1,7 +1,6 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
@@ -11,14 +10,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import android.widget.VideoView
+import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.target.SimpleTarget
-import com.bumptech.glide.request.transition.Transition
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.VideoCapture
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
@@ -32,13 +28,14 @@ import com.ihsan.memorieswithimagevideo.data.MediaType
 import jp.wasabeef.transformers.glide.BlurTransformation
 
 class ImageMemoryFragment : Fragment() {
+    private lateinit var cardView: CardView
     private lateinit var coverImageView: ImageView
     private lateinit var currentImageView: ImageView
     private lateinit var collageImageView: ImageView
     private lateinit var collageImageView_1: ImageView
     private lateinit var collageImageView_2: ImageView
     private lateinit var collageImageView_3: ImageView
-    private lateinit var videoView:VideoView
+    private lateinit var videoView: VideoView
     private var currentContentUri: Uri = Uri.EMPTY
     private lateinit var recordAnimation: VideoCapture
     private var i = 0
@@ -53,7 +50,9 @@ class ImageMemoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        recordAnimation = VideoCapture(view.findViewById(R.id.cardViewAnimationRoot))
+        cardView = view.findViewById(R.id.cardViewAnimationRoot)
+        recordAnimation = VideoCapture(cardView)
+
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
         collageImageView = view.findViewById(R.id.collageImageView)
@@ -63,27 +62,31 @@ class ImageMemoryFragment : Fragment() {
         videoView = view.findViewById(R.id.videoView)
 
         showNextImage()
-        recordAnimation.startRecordingUsingFFMPEG()
+
+        cardView.post {
+            recordAnimation.startRecordingUsingFFMPEG()
+        }
     }
 
     private fun showNextImage() {
         if (contentUris.value!!.isNotEmpty()) {
-            if (!recordAnimation.isFfmpegRecorderStarted){
+            /*if (!recordAnimation.isFfmpegRecorderStarted){
                 Toast.makeText(requireContext(), "recording", Toast.LENGTH_SHORT).show()
                 recordAnimation.startRecordingUsingFFMPEG()
             }else{
                 recordAnimation.stopRecordingUsingFFMPEG()
-            }
+            }*/
             //Increment the index
             nextImageUri()
 
-            if(mediaItems[currentIndex].second == MediaType.VIDEO){
+            if (mediaItems[currentIndex].second == MediaType.VIDEO) {
                 Toast.makeText(requireContext(), "video", Toast.LENGTH_SHORT).show()
                 setVideoViewShapeWithPosition()
                 return
             }
 
-            Toast.makeText(requireContext(), currentContentUri.toString(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), currentContentUri.toString(), Toast.LENGTH_SHORT)
+                .show()
 
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
             when (animations[i++ % animations.size]) {
@@ -92,6 +95,7 @@ class ImageMemoryFragment : Fragment() {
                 }
 
                 "2" -> {
+                    recordAnimation.stopRecordingUsingFFMPEG()
                     transitionWithScaleDownCollage()
                 }
 
@@ -118,9 +122,11 @@ class ImageMemoryFragment : Fragment() {
                 "8" -> {
                     transitionWithScaleUpWithMove()
                 }
+
                 "9" -> {
                     setVideoViewShapeWithPosition()
                 }
+
                 else -> {
                     Toast.makeText(requireContext(), "No animation", Toast.LENGTH_SHORT).show()
                 }
@@ -158,7 +164,8 @@ class ImageMemoryFragment : Fragment() {
 
 
         videoView.setOnPreparedListener {
-            val lastFrame= retrieveFrameFromVideo(mediaItems[currentIndex].first, videoView.duration.toLong())
+            val lastFrame =
+                retrieveFrameFromVideo(mediaItems[currentIndex].first, videoView.duration.toLong())
             videoView.alpha = 1f
             currentImageView.alpha = 0f
             coverImageView.alpha = 0f
@@ -179,7 +186,10 @@ class ImageMemoryFragment : Fragment() {
         retriever.setDataSource(videoUri.path)
 
         // Retrieve a frame at the specified time (in microseconds)
-        val frame = retriever.getFrameAtTime(timeInMillis * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+        val frame = retriever.getFrameAtTime(
+            timeInMillis * 1000,
+            MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+        )
 
         // Release the retriever
         retriever.release()

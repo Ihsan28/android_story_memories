@@ -18,10 +18,12 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.mobileffmpeg.Config
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_CANCEL
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
+
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
@@ -163,6 +165,7 @@ class VideoEditingFragment : Fragment() {
         )
 
         FFmpeg.executeAsync(command) { _, returnCode ->
+
             if (returnCode == RETURN_CODE_SUCCESS) {
                 Log.i(Config.TAG, "Async command execution completed successfully.")
                 navigateToHomeFragment()
