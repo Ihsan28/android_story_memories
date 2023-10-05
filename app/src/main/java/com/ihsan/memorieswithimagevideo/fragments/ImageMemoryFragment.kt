@@ -1,9 +1,12 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +14,8 @@ import android.widget.ImageView
 import android.widget.Toast
 import android.widget.VideoView
 import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
@@ -28,6 +33,14 @@ import com.ihsan.memorieswithimagevideo.data.MediaType
 import jp.wasabeef.transformers.glide.BlurTransformation
 
 class ImageMemoryFragment : Fragment() {
+    private val TAG = "ImageMemoryFragment"
+    private val REQUEST_CODE_PERMISSIONS = 1001
+    private val REQUIRED_PERMISSIONS = arrayOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE
+    )
     private lateinit var cardView: CardView
     private lateinit var coverImageView: ImageView
     private lateinit var currentImageView: ImageView
@@ -49,9 +62,10 @@ class ImageMemoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        checkPermissions()
 
         cardView = view.findViewById(R.id.cardViewAnimationRoot)
-        recordAnimation = VideoCapture(cardView)
+        initRecording()
 
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
@@ -61,22 +75,72 @@ class ImageMemoryFragment : Fragment() {
         collageImageView_3 = view.findViewById(R.id.collageImageView_3)
         videoView = view.findViewById(R.id.videoView)
 
-        showNextImage()
-
         cardView.post {
-            recordAnimation.startRecordingUsingFFMPEG()
-            //recordAnimation.startRecordingMediaRecorder()
+            showNextImage()
+            recordAnimation.startRecordingFFMPEG()
+        }
+    }
+
+    private fun checkPermissions() {
+        if (!allPermissionsGranted()) {
+            ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+        }
+    }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun initRecording(){
+        recordAnimation = VideoCapture(cardView, object : AnimationRecordingCallbacks {
+            override fun onRecordingStarted() {
+                Log.d(TAG, "onRecordingStarted")
+            }
+
+            override fun onRecordingStopped() {
+                Log.d(TAG, "onRecordingStopped")
+            }
+
+            override fun onRecordingFailed() {
+                Log.e(TAG, "onRecordingFailed")
+            }
+
+            override fun onFrameAvailable(imagePaths:List<String>) {
+                //showNextImage()
+            }
+
+            override fun onExportReady() {
+                Toast.makeText(requireContext(), "Export ready", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "onExportReady")
+            }
+
+            override fun onExportStarted() {
+                Log.d(TAG, "onExportStarted")
+            }
+
+            override fun onExportProgress(progressPercentage: Int) {
+                Log.d(TAG, "onExportProgress: $progressPercentage")
+            }
+
+            override fun onExportFinished() {
+                Log.d(TAG, "onExportFinished")
+            }
+
+            override fun onExportFailed(e: Exception) {
+                Log.e(TAG, "onExportFailed: $e")
+            }
+        })
+    }
+
+    fun exportVideoFFMPEG(){
+        if (recordAnimation.isReadyToExport){
+            Toast.makeText(requireContext(), "Exporting video", Toast.LENGTH_SHORT).show()
+            recordAnimation.exportVideoFFMPEG()
         }
     }
 
     private fun showNextImage() {
         if (contentUris.value!!.isNotEmpty()) {
-            /*if (!recordAnimation.isFfmpegRecorderStarted){
-                Toast.makeText(requireContext(), "recording", Toast.LENGTH_SHORT).show()
-                recordAnimation.startRecordingUsingFFMPEG()
-            }else{
-                recordAnimation.stopRecordingUsingFFMPEG()
-            }*/
             //Increment the index
             nextImageUri()
 
@@ -86,49 +150,31 @@ class ImageMemoryFragment : Fragment() {
                 return
             }
 
-            Toast.makeText(requireContext(), currentContentUri.toString(), Toast.LENGTH_SHORT)
-                .show()
-
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
+
+            if (animations.size <=i){
+                recordAnimation.stopRecordingUsingFFMPEG()
+                //recordAnimation.stopRecordingMediaRecorder()
+            }
+
             when (animations[i++ % animations.size]) {
-                "1" -> {
-                    transitionWithCollage()
-                }
+                "1" -> { transitionWithCollage() }
 
-                "2" -> {
-                    recordAnimation.stopRecordingUsingFFMPEG()
-                    //recordAnimation.stopRecordingMediaRecorder()
+                "2" -> { transitionWithScaleDownCollage() }
 
-                    transitionWithScaleDownCollage()
-                }
+                "3" -> { transitionWithScaleUp() }
 
-                "3" -> {
-                    transitionWithScaleUp()
-                }
+                "4" -> { transitionWithScaleDown() }
 
-                "4" -> {
-                    transitionWithScaleDown()
-                }
+                "5" -> { transitionWithBlurry() }
 
-                "5" -> {
-                    transitionWithBlurry()
-                }
+                "6" -> { transitionWithScaleDownWithSlideInOut() }
 
-                "6" -> {
-                    transitionWithScaleDownWithSlideInOut()
-                }
+                "7" -> { transitionWithMoveWithInitialZoom() }
 
-                "7" -> {
-                    transitionWithMoveWithInitialZoom()
-                }
+                "8" -> { transitionWithScaleUpWithMove() }
 
-                "8" -> {
-                    transitionWithScaleUpWithMove()
-                }
-
-                "9" -> {
-                    setVideoViewShapeWithPosition()
-                }
+                "9" -> { setVideoViewShapeWithPosition() }
 
                 else -> {
                     Toast.makeText(requireContext(), "No animation", Toast.LENGTH_SHORT).show()
@@ -140,7 +186,6 @@ class ImageMemoryFragment : Fragment() {
     private fun nextImageUri(): Uri {
         currentIndex = (currentIndex + 1) % contentUris.value!!.size
         currentContentUri = contentUris.value!![currentIndex]
-
         return currentContentUri
     }
 
@@ -162,9 +207,6 @@ class ImageMemoryFragment : Fragment() {
     private fun setVideoViewShapeWithPosition(
     ) {
         videoView.setVideoURI(currentContentUri)
-        //retrieve a frame from the end of the video
-        //val fastFrame= retrieveFrameFromVideo(currentContentUri, 0)
-
 
         videoView.setOnPreparedListener {
             val lastFrame =
@@ -176,6 +218,8 @@ class ImageMemoryFragment : Fragment() {
             coverImageView.setImageURI(lastFrame?.let { it1 -> Uri.parse(it1.toString()) })
             videoView.start()
         }
+
+        //on video completion
         videoView.setOnCompletionListener {
             videoView.alpha = 0f
             coverImageView.alpha = 1f
@@ -196,7 +240,6 @@ class ImageMemoryFragment : Fragment() {
 
         // Release the retriever
         retriever.release()
-
         return frame
     }
 

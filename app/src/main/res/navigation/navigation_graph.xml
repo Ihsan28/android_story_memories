@@ -27,11 +27,6 @@
             app:destination="@id/videoEditingFragment" />
     </fragment>
     <fragment
-        android:id="@+id/videoMemoryFragment"
-        android:name="com.ihsan.memorieswithimagevideo.fragments.VideoMemoryFragment"
-        android:label="fragment_video_memory"
-        tools:layout="@layout/fragment_video_memory" />
-    <fragment
         android:id="@+id/imageMemoryFragment"
         android:name="com.ihsan.memorieswithimagevideo.fragments.ImageMemoryFragment"
         android:label="fragment_image_memory"

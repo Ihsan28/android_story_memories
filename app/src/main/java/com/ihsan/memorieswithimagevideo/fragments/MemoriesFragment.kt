@@ -95,13 +95,7 @@ class MemoriesFragment : Fragment() {
         }
 
         exportButton.setOnClickListener {
-            // need to change to nav controller
-
-            val fragment = VideoMemoryFragment()
-            val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragment_container, fragment)
-            transaction.addToBackStack(null)
-            transaction.commit()
+            ImageMemoryFragment().exportVideoFFMPEG()
         }
     }
 
