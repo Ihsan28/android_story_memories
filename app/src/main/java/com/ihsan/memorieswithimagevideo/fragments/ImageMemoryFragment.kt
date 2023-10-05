@@ -65,6 +65,7 @@ class ImageMemoryFragment : Fragment() {
 
         cardView.post {
             recordAnimation.startRecordingUsingFFMPEG()
+            //recordAnimation.startRecordingMediaRecorder()
         }
     }
 
@@ -96,6 +97,8 @@ class ImageMemoryFragment : Fragment() {
 
                 "2" -> {
                     recordAnimation.stopRecordingUsingFFMPEG()
+                    //recordAnimation.stopRecordingMediaRecorder()
+
                     transitionWithScaleDownCollage()
                 }
 

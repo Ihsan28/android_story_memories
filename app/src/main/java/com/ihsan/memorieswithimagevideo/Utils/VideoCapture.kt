@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
@@ -15,18 +16,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
+import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 class VideoCapture(private val cardView: CardView) {
+
     private val TAG = "VideoCapture"
     private var mediaRecorder: MediaRecorder? = null
-    private val frameRate = 10L
+
+    private val frameRate = 24
     private val scheduleDelay = 1000L / frameRate
     var isFfmpegRecorderStarted: Boolean = false
-    private var executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    private var executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r).apply { priority = Thread.MAX_PRIORITY }
+    }
+    private var reusableBitmap: Bitmap? = null
+    private var canvas: Canvas? = null
 
     fun startRecordingUsingFFMPEG() {
         if (isFfmpegRecorderStarted) {
@@ -37,28 +44,28 @@ class VideoCapture(private val cardView: CardView) {
         isFfmpegRecorderStarted = true
         var frameCount = 0
 
-        //get bitmap from surface view
-        val bitmap = captureView(cardView)
-
         //background executor loop by default in background thread
         executor.scheduleAtFixedRate({
-
-            //runnable
+            // Check if recording should stop
             if (frameCount > 9999) {
                 stopRecordingUsingFFMPEG()
+                return@scheduleAtFixedRate
             }
 
-            //get bitmap from surface view
-            val bitmap = captureView(cardView)
+                try {
+                    // Get bitmap from surface view
+                    val bitmap = captureView(cardView)
 
-            //save bitmap to file with unique name
-            val path =
-                saveBitmapToFile(cardView.context, bitmap, "frame${"%04d".format(frameCount)}.jpg")
-            Log.d(TAG, "startRecordingUsingFFMPEG: $frameCount")
-            Log.d(TAG, "startRecordingUsingFFMPEG: $path")
+                    // Save bitmap to file with a unique name
+                    val path = saveBitmapToFile(cardView.context, bitmap, "frame${"%04d".format(frameCount)}.jpg")
+                    Log.d(TAG, "startRecordingUsingFFMPEG: $path")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error capturing frame: $e")
+                }
+
             frameCount++
+        }, 0, scheduleDelay, TimeUnit.MILLISECONDS)
 
-        }, 0, 100, TimeUnit.MILLISECONDS)
 
         Toast.makeText(cardView.context, "recording started", Toast.LENGTH_SHORT).show()
     }
@@ -74,22 +81,7 @@ class VideoCapture(private val cardView: CardView) {
             isFfmpegRecorderStarted = false
             executor.shutdown()
 
-            val output = getOutputFilePath()
-            //get audio  resource
-            val audioFile = File(cardView.context.cacheDir, "aylex.mp3")
-            audioFile.outputStream().use { outputStream ->
-                cardView.context.resources.openRawResource(R.raw.aylex).use { inputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            val command =
-                "-framerate $frameRate -i ${getOutputFilePathImage()}frame%04d.jpg -i ${audioFile.absolutePath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest $output"
-            val commanz =
-                "-framerate $frameRate -i ${getOutputFilePathImage()}frame%04d.jpg -i ${audioFile.absolutePath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest $output"
-
-            executeCommand(command)
-            //delete frames
-            //deleteFiles()
+            exportVideoFFMPEG()
 
             Toast.makeText(cardView.context, "recording stop", Toast.LENGTH_SHORT).show()
             // reminder: show a success message or update a progress bar or something else
@@ -101,6 +93,23 @@ class VideoCapture(private val cardView: CardView) {
             // reminder: show a success message or update a progress bar or something else
         }
 
+    }
+
+    private fun exportVideoFFMPEG() {
+        val output = getOutputFilePath()
+        //get audio  resource
+        val audioFile = File(cardView.context.cacheDir, "aylex.mp3")
+        audioFile.outputStream().use { outputStream ->
+            cardView.context.resources.openRawResource(R.raw.aylex).use { inputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        val command =
+            "-framerate $frameRate -i ${cardView.context.filesDir}/frame%04d.jpg -i ${audioFile.absolutePath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest $output"
+
+        executeCommand(command)
+        //delete frames
+        deleteFiles()
     }
 
     private fun deleteFiles(
@@ -118,16 +127,16 @@ class VideoCapture(private val cardView: CardView) {
     }
 
     private fun saveBitmapToFile(context: Context, bitmap: Bitmap, filename: String): String {
-        val file = File(getOutputFilePathImage(), filename)
-        val fileOutputStream = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
-        fileOutputStream.close()
+        val file = File(context.filesDir, filename)
+        file.outputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+        }
         return file.path
     }
 
     private fun captureView(view: CardView): Bitmap {
-        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
+        val bitmap = reusableBitmap ?: Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = this.canvas ?: Canvas(bitmap)
         view.draw(canvas)
         return bitmap
     }
@@ -159,15 +168,20 @@ class VideoCapture(private val cardView: CardView) {
         }
     }
 
-    /*fun startRecordingUsingMediaRecorder() {
+    private fun executeCommand(command: String) {
+        FFmpeg.execute(command)
+    }
+
+    fun startRecordingMediaRecorder() {
+        Toast.makeText(cardView.context, "recording started", Toast.LENGTH_SHORT).show()
         if (Build.VERSION_CODES.S <= Build.VERSION.SDK_INT) {
 
-            mediaRecorder = MediaRecorder(surfaceView.context).apply {
+            mediaRecorder = MediaRecorder(cardView.context).apply {
                 setVideoSource(MediaRecorder.VideoSource.SURFACE)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setVideoEncoder(MediaRecorder.VideoEncoder.H264)
                 setOutputFile(getOutputFilePath())
-                setPreviewDisplay(surfaceView.holder.surface)
+                //setPreviewDisplay(cardView.holder.surface)
                 try {
                     prepare()
                     start()
@@ -181,7 +195,7 @@ class VideoCapture(private val cardView: CardView) {
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setVideoEncoder(MediaRecorder.VideoEncoder.H264)
                 setOutputFile(getOutputFilePath())
-                setPreviewDisplay(surfaceView.holder.surface)
+                //setPreviewDisplay(cardView.holder.surface)
                 try {
                     prepare()
                     start()
@@ -190,21 +204,16 @@ class VideoCapture(private val cardView: CardView) {
                 }
             }
         }
+    }
 
-
-    }*/
-
-    fun stopRecording() {
+    fun stopRecordingMediaRecorder() {
+        Toast.makeText(cardView.context, "recording stop", Toast.LENGTH_SHORT).show()
         mediaRecorder?.apply {
             stop()
             reset()
             release()
         }
         mediaRecorder = null
-    }
-
-    private fun executeCommand(command: String) {
-        FFmpeg.execute(command)
     }
 
     private fun getOutputFilePath(): String {

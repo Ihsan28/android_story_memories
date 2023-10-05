@@ -89,5 +89,5 @@ dependencies {
 
     //implementation("com.arthenica:ffmpeg-kit-full:4.5.1-1")
 
-    implementation("com.arthenica:mobile-ffmpeg-full:4.4")
+    implementation("com.arthenica:mobile-ffmpeg-full-gpl:4.4")
 }
