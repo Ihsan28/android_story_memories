@@ -4,6 +4,8 @@ package com.ihsan.memorieswithimagevideo.fragments
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.graphics.PointF
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
@@ -36,7 +39,7 @@ class EditSelectedFragment : Fragment() {
     private lateinit var miniPreviewAdapter: MiniPreviewAdapter
 
     private lateinit var pickMediaContract: ActivityResultLauncher<Intent>
-    private var currentContentUri = contentUris.value?.get(currentIndex)
+    private lateinit var currentContentUri: Uri
 
 
     /*
@@ -117,11 +120,12 @@ class EditSelectedFragment : Fragment() {
         val addButton = view.findViewById<Button>(R.id.addButton)
         val removeButton = view.findViewById<Button>(R.id.removeButton)
         val editButton = view.findViewById<Button>(R.id.editButton)
-        Data().mapContentUrisToMediaItems()
-
         pickMediaContract = pickMediaContract()
 
         //initialize()
+        if (contentUris.value != null && contentUris.value!!.isNotEmpty()) {
+            currentContentUri = contentUris.value!![currentIndex]
+        }
 
         // Register a callback to be invoked when the ViewPager2 changes its current item
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -140,6 +144,7 @@ class EditSelectedFragment : Fragment() {
 
         // Set up the ViewPager2 with the editViewPagerAdapter
         editViewPagerAdapter = contentUris.value?.let { EditViewPagerAdapter(it) }!!
+
         //editViewPagerAdapter= EditViewPagerAdapter(mediaItems.map { it.first })
         viewPager.adapter = editViewPagerAdapter
 
@@ -159,6 +164,7 @@ class EditSelectedFragment : Fragment() {
             scrollMiniPreviewToCenteredPosition(position)
         }
 
+
         addButton.setOnClickListener {
             pickMediaContent()
             editViewPagerAdapter.notifyDataSetChanged()
@@ -175,21 +181,23 @@ class EditSelectedFragment : Fragment() {
 
         editButton.setOnClickListener {
             //navigate to edit fragment
-            Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex]}")
+            if (mediaItems.isNotEmpty()){
+                Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex]}")
 
-            if (mediaItems[currentIndex].second == MediaType.VIDEO) {
-                val action =
-                    EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
-                        currentIndex
-                    )
-                view.findNavController().navigate(action)
-            } else if (mediaItems[currentIndex].second == MediaType.IMAGE) {
-                Toast.makeText(
-                    requireContext(),
-                    "Not available ${mediaItems[currentIndex].second}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex].second}")
+                if (mediaItems[currentIndex].second == MediaType.VIDEO) {
+                    val action =
+                        EditSelectedFragmentDirections.actionEditSelectedFragmentToVideoEditingFragment(
+                            currentIndex
+                        )
+                    view.findNavController().navigate(action)
+                } else if (mediaItems[currentIndex].second == MediaType.IMAGE) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Not available ${mediaItems[currentIndex].second}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.d(TAG, "onViewCreated: ${mediaItems[currentIndex].second}")
+                }
             }
         }
     }
@@ -342,7 +350,7 @@ class EditSelectedFragment : Fragment() {
 
     private fun calculateCenteredPosition(): Int {
         currentContentUri =
-            contentUris.value?.get(currentIndex) // Current content URI in ViewPager
+            contentUris.value?.get(currentIndex)!! // Current content URI in ViewPager
         for ((index, pair) in mediaItems.withIndex()) {
             if (pair.first == currentContentUri) {
                 return index
@@ -353,8 +361,26 @@ class EditSelectedFragment : Fragment() {
 
     private fun scrollMiniPreviewToCenteredPosition(centeredPosition: Int) {
         if (centeredPosition != RecyclerView.NO_POSITION) {
-            // Scroll to the centered position with a smooth scroll effect
-            miniPreviewRecyclerView.smoothScrollToPosition(centeredPosition)
+            miniPreviewRecyclerView.post {
+                val layoutManager = miniPreviewRecyclerView.layoutManager as LinearLayoutManager
+                val smoothScroller = object : LinearSmoothScroller(miniPreviewRecyclerView.context) {
+                    // This controls the direction in which smooth scrolling occurs
+                    override fun computeScrollVectorForPosition(targetPosition: Int): PointF? {
+                        return layoutManager.computeScrollVectorForPosition(targetPosition)
+                    }
+
+                    // This returns the distance from the visible center of the parent RecyclerView to the target position
+                    override fun calculateDtToFit(
+                        viewStart: Int, viewEnd: Int, boxStart: Int, boxEnd: Int, snapPreference: Int
+                    ): Int {
+                        val midpoint = (boxStart + boxEnd) / 2
+                        val targetMidpoint = (viewStart + viewEnd) / 2
+                        return midpoint - targetMidpoint
+                    }
+                }
+                smoothScroller.targetPosition = centeredPosition
+                layoutManager.startSmoothScroll(smoothScroller)
+            }
         }
     }
 }

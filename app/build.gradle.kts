@@ -71,6 +71,9 @@ dependencies {
     // Kotlin
     implementation("androidx.navigation:navigation-ui-ktx:2.7.2")
 
+    //progress bar
+    implementation("com.daimajia.numberprogressbar:library:1.4@aar")
+
 //    implementation("fileTree(dir: 'libs', include: ['*.jar'])")
     /*implementation("com.writingminds:FFmpegAndroid:0.3.2")
     implementation("com.theartofdev.edmodo:android-image-cropper:2.8.0")*/

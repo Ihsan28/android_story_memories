@@ -3,12 +3,91 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".fragments.MemoriesFragment">
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager2"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardViewAnimationRoot"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            app:cardCornerRadius="20dp">
+            <!--current ImageView-->
+            <ImageView
+                android:id="@+id/currentImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="1.0"
+                android:scaleType="centerCrop" />
+
+            <ImageView
+                android:id="@+id/collageImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+
+            <ImageView
+                android:id="@+id/collageImageView_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+
+            <ImageView
+                android:id="@+id/collageImageView_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+
+            <ImageView
+                android:id="@+id/collageImageView_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+
+            <!--cover imageview-->
+            <ImageView
+                android:id="@+id/coverImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
+
+            <!--video view-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center">
+
+                <VideoView
+                    android:id="@+id/videoView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:backgroundTint="@color/colorPrimaryDark"
+                    android:alpha="0.0"
+                    android:scaleType="centerCrop" />
+            </LinearLayout>
+
+            <include
+                android:id="@+id/double_image_layout"
+                layout="@layout/memory_page_2_images"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/triple_image_layout"
+                layout="@layout/memory_page_3_images"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
+    </RelativeLayout>
 
     <Button
         android:id="@+id/pickImageButton"
@@ -42,5 +121,14 @@
         android:layout_marginBottom="5dp"
         android:layout_marginEnd="5dp"
         android:text="@string/export" />
+
+        <com.daimajia.numberprogressbar.NumberProgressBar
+            android:id="@+id/number_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            style="@style/NumberProgressBar_Default"
+            android:background="#AD303F9F"
+            />
 
 </RelativeLayout>

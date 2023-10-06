@@ -14,6 +14,7 @@ import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.fragments.AnimationRecordingCallbacks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -55,23 +56,23 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
 
         //background executor loop by default in background thread
         executor.scheduleAtFixedRate({
-            // Check if recording should stop
             if (frameCount > 9999) {
                 stopRecordingUsingFFMPEG()
                 return@scheduleAtFixedRate
             }
+            // Save bitmap to file with a unique name
+            val fileName="frame${"%04d".format(frameCount)}.jpg"
 
+            CoroutineScope(Dispatchers.IO).launch {
+                // Check if recording should stop
                 try {
-                    // Get bitmap from surface view
-                    val bitmap = captureView(cardView)
-
                     // Save bitmap to file with a unique name
-                    val path = saveBitmapToFile( bitmap, "frame${"%04d".format(frameCount)}.jpg")
+                    val path = saveBitmapToFile(fileName)
                     Log.d(TAG, "startRecordingUsingFFMPEG: $path")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error capturing frame: $e")
                 }
-
+            }
             frameCount++
         }, 0, scheduleDelay, TimeUnit.MILLISECONDS)
 
@@ -85,20 +86,23 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
         }
 
         try {
-            recordingCallbacks.onRecordingStopped()
 
-            isFfmpegRecorderStarted = false
-            isReadyToExport = true
-            executor.shutdown()
+            CoroutineScope(Dispatchers.IO).launch {
+                isFfmpegRecorderStarted = false
+                isReadyToExport = true
+                executor.shutdown()
+                withContext(Dispatchers.Main){
+                    recordingCallbacks.onRecordingStopped()
+                }
 
-
-            cacheDirectory.listFiles()
-                ?.let { imagesPath -> recordingCallbacks.onFrameAvailable(imagesPath.map { it.absolutePath }) }
-            recordingCallbacks.onExportReady()
-            exportVideoFFMPEG()
-
-            Log.i(TAG, "stopRecordingUsingFFMPEG: recording stopped")
-            // reminder: show a success message or update a progress bar or something else
+                cacheDirectory.listFiles()
+                    ?.let { imagesPath -> recordingCallbacks.onFrameAvailable(imagesPath.map { it.absolutePath }) }
+                withContext(Dispatchers.Main){
+                    recordingCallbacks.onExportReady()
+                }
+                //exportVideoFFMPEG()
+                Log.i(TAG, "stopRecordingUsingFFMPEG: recording stopped")
+            }
 
         } catch (e: Exception) {
             Log.e(TAG, "stopRecordingUsingFFMPEG: $e")
@@ -106,21 +110,24 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
     }
 
     fun exportVideoFFMPEG() {
-        val output = getOutputFilePath()
-        //get audio  resource
-        val audioFile = File(cacheDirectory, "aylex.mp3")
-        audioFile.outputStream().use { outputStream ->
-            cardView.context.resources.openRawResource(R.raw.aylex).use { inputStream ->
-                inputStream.copyTo(outputStream)
+        recordingCallbacks.onExportStarted()
+        CoroutineScope(Dispatchers.IO).launch{
+            val output = getOutputFilePath()
+            //get audio  resource
+            val audioFile = File(cacheDirectory, "aylex.mp3")
+            audioFile.outputStream().use { outputStream ->
+                cardView.context.resources.openRawResource(R.raw.aylex).use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
+            val command =
+                "-framerate $frameRate -i ${cacheDirectory}/frame%04d.jpg -i ${audioFile.absolutePath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest $output"
+
+            executeCommand(command)
+
+            //delete frames
+            deleteFiles()
         }
-        val command =
-            "-framerate $frameRate -i ${cacheDirectory}/frame%04d.jpg -i ${audioFile.absolutePath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest $output"
-
-        executeCommand(command)
-
-        //delete frames
-        deleteFiles()
     }
 
     private fun executeCommand(command: String) {
@@ -142,7 +149,6 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
         }
 
         try {
-            recordingCallbacks.onExportStarted()
             FFmpeg.execute(command)
             recordingCallbacks.onExportFinished()
         } catch (e: Exception) {
@@ -184,7 +190,10 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
         }
     }
 
-    private fun saveBitmapToFile( bitmap: Bitmap, filename: String): String {
+    private fun saveBitmapToFile( filename: String): String {
+        //get bitmap from surface view
+        val bitmap = captureView(cardView)
+        //save bitmap to file
         val file = File(cacheDirectory, filename)
         file.outputStream().use { outputStream ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
