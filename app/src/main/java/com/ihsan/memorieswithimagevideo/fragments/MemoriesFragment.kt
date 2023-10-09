@@ -14,9 +14,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.ProgressBar
+import android.widget.LinearLayout
 import android.widget.Toast
 import android.widget.VideoView
 import androidx.activity.result.ActivityResultLauncher
@@ -34,14 +36,19 @@ import com.daimajia.numberprogressbar.NumberProgressBar
 import com.ihsan.memorieswithimagevideo.R
 import com.ihsan.memorieswithimagevideo.Utils.VideoCapture
 import com.ihsan.memorieswithimagevideo.data.Data
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.coverRevealDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenHeight
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
 import com.ihsan.memorieswithimagevideo.data.MediaType
+import com.ihsan.memorieswithimagevideo.databinding.FragmentMemoriesBinding
 import jp.wasabeef.transformers.glide.BlurTransformation
-import kotlinx.coroutines.CoroutineScope
 
 class MemoriesFragment : Fragment() {
     private val TAG = "MemoriesFragment"
+    private lateinit var binding: FragmentMemoriesBinding
 
     //private lateinit var viewPager2: ViewPager2
     private lateinit var pickImageButton: Button
@@ -60,27 +67,36 @@ class MemoriesFragment : Fragment() {
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
+
     private lateinit var cardView: CardView
     private lateinit var coverImageView: ImageView
     private lateinit var currentImageView: ImageView
+
     private lateinit var collageImageView: ImageView
     private lateinit var collageImageView_1: ImageView
     private lateinit var collageImageView_2: ImageView
     private lateinit var collageImageView_3: ImageView
+
+    private lateinit var doubleImageViewLayout: LinearLayout
+    private lateinit var doubleImageView1: ImageView
+    private lateinit var doubleImageView2: ImageView
+
+    private lateinit var tripleImageViewLayout: LinearLayout
+    private lateinit var tripleImageView1: ImageView
+    private lateinit var tripleImageView2: ImageView
+    private lateinit var tripleImageView3: ImageView
     private lateinit var videoView: VideoView
     private var currentContentUri: Uri = Uri.EMPTY
     private lateinit var recordAnimation: VideoCapture
     private var i = 0
     private lateinit var progressBar: NumberProgressBar
 
-
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_memories, container, false)
+        binding = FragmentMemoriesBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -91,7 +107,6 @@ class MemoriesFragment : Fragment() {
 
         checkPermissions()
         cardView = view.findViewById(R.id.cardViewAnimationRoot)
-        initRecording()
 
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
@@ -99,18 +114,32 @@ class MemoriesFragment : Fragment() {
         collageImageView_1 = view.findViewById(R.id.collageImageView_1)
         collageImageView_2 = view.findViewById(R.id.collageImageView_2)
         collageImageView_3 = view.findViewById(R.id.collageImageView_3)
+
+        doubleImageViewLayout = view.findViewById(R.id.doubleImageViewLayout)
+        doubleImageView1 = view.findViewById(R.id.doubleImageView1)
+        doubleImageView2 = view.findViewById(R.id.doubleImageView2)
+
+        tripleImageViewLayout = view.findViewById(R.id.tripleImageViewLayout)
+        tripleImageView1 = view.findViewById(R.id.tripleImageView1)
+        tripleImageView2 = view.findViewById(R.id.tripleImageView2)
+        tripleImageView3 = view.findViewById(R.id.tripleImageView3)
+
         videoView = view.findViewById(R.id.videoView)
+
         progressBar = view.findViewById(R.id.number_progress_bar)
         progressBar.visibility = View.INVISIBLE
-        progressBar.max= 100
+        progressBar.max = 100
         progressBar.reachedBarHeight = 40f
         progressBar.reachedBarColor = Color.GREEN
 
         editButton = view.findViewById(R.id.edit)
+
         exportButton = view.findViewById(R.id.export)
-        pickImageButton = view.findViewById(R.id.pickImageButton)
         exportButton.visibility = View.INVISIBLE
 
+        pickImageButton = view.findViewById(R.id.pickImageButton)
+
+        initRecording()
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(requireContext(), R.raw.aylex)
         mediaPlayer.isLooping = true
@@ -283,7 +312,7 @@ class MemoriesFragment : Fragment() {
         })
     }
 
-    private fun exportVideoFFMPEG () {
+    private fun exportVideoFFMPEG() {
         if (recordAnimation.isReadyToExport) {
             Toast.makeText(requireContext(), "Exporting video", Toast.LENGTH_SHORT).show()
             recordAnimation.exportVideoFFMPEG()
@@ -301,21 +330,24 @@ class MemoriesFragment : Fragment() {
                 return
             }
 
-            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8")
+            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
 
             if (animations.size <= i) {
                 recordAnimation.stopRecordingUsingFFMPEG()
-                //recordAnimation.stopRecordingMediaRecorder()
                 return
             }
+            /*if (contentUris.value!!.size-1 > currentIndex) {
+                recordAnimation.stopRecordingUsingFFMPEG()
+                return
+            }*/
 
             when (animations[i++ % animations.size]) {
                 "1" -> {
-                    transitionWithCollage()
+                    transitionWithSlideForDoubleImage()
                 }
 
                 "2" -> {
-                    transitionWithScaleDownCollage()
+                    transitionWithSlideForTripleImage()
                 }
 
                 "3" -> {
@@ -342,8 +374,13 @@ class MemoriesFragment : Fragment() {
                     transitionWithScaleUpWithMove()
                 }
 
+
                 "9" -> {
-                    setVideoViewShapeWithPosition()
+                    transitionWithCollage()
+                }
+
+                "10" -> {
+                    transitionWithScaleDownCollage()
                 }
 
                 else -> {
@@ -374,8 +411,7 @@ class MemoriesFragment : Fragment() {
         imageView.rotation = rotation
     }
 
-    private fun setVideoViewShapeWithPosition(
-    ) {
+    private fun setVideoViewShapeWithPosition() {
         videoView.setVideoURI(currentContentUri)
 
         videoView.setOnPreparedListener {
@@ -856,5 +892,134 @@ class MemoriesFragment : Fragment() {
                     .start()
             }
             .start()
+    }
+
+    private fun transitionWithSlideForDoubleImage() {
+        val currentContentUri = currentContentUri
+        val imageUri1 = nextImageUri()
+        val imageUri2 = nextImageUri()
+
+        // Load animations
+        val slideInLeft: Animation =
+            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_left)
+        val slideInRight: Animation =
+            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_right)
+
+        setImageViewShapeWithPosition(coverImageView)
+        setImageFromContentUri(coverImageView, currentContentUri)
+
+        coverImageView.animate().alpha(1f)
+            .setDuration(coverRevealDuration)
+            .withEndAction {
+
+                setImageViewShapeWithPosition(currentImageView)
+                setImageFromContentUri(currentImageView, currentContentUri)
+
+                // show current image
+                coverImageView.alpha = 0f
+
+                setImageViewShapeWithPosition(doubleImageView1, translationX = -screenWidth)
+                setImageViewShapeWithPosition(doubleImageView2, translationX = screenWidth)
+                setImageFromContentUri(doubleImageView1, imageUri1)
+                setImageFromContentUri(doubleImageView2, imageUri2)
+
+                doubleImageViewLayout.animate()
+                    .alpha(1f)
+                    .setDuration(animationDuration / 3)
+                    .withEndAction {
+                        // Assuming you have URIs or resource IDs for your images
+
+                        doubleImageView1.animate()
+                            .translationX(0f)
+                            .setDuration(animationDuration / 3)
+                            .withEndAction {
+                                doubleImageView2.animate()
+                                    .translationX(0f)
+                                    .setDuration(animationDuration / 3)
+                                    .withEndAction {
+                                        doubleImageViewLayout.animate()
+                                            .alpha(0f)
+                                            .setDuration(coverRevealDuration)
+                                            .withEndAction {
+                                                //next image animation
+                                                showNextImage()
+                                            }
+                                            .start()
+                                    }
+                                    .start()
+                            }.start()
+                    }.start()
+            }
+            .start()
+
+        // Additional logic for updating image URIs and re-triggering animations if needed
+    }
+
+    private fun transitionWithSlideForTripleImage() {
+        val currentContentUri = currentContentUri
+        val imageUri1 = nextImageUri()
+        val imageUri2 = nextImageUri()
+        val imageUri3 = nextImageUri()
+
+        // Load animations
+        val slideInBottom: Animation =
+            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_bottom)
+
+        setImageViewShapeWithPosition(coverImageView)
+        setImageFromContentUri(coverImageView, currentContentUri)
+
+        coverImageView.animate().alpha(1f)
+            .setDuration(coverRevealDuration)
+            .withEndAction {
+
+                setImageViewShapeWithPosition(currentImageView)
+                setImageFromContentUri(currentImageView, currentContentUri)
+
+                // show current image
+                coverImageView.alpha = 0f
+
+                setImageViewShapeWithPosition(tripleImageView1, translationX = screenWidth, translationY = screenHeight)
+                setImageViewShapeWithPosition(tripleImageView2, translationX = screenWidth, translationY = screenHeight)
+                setImageViewShapeWithPosition(tripleImageView3, translationX = screenWidth, translationY = screenHeight)
+
+                setImageFromContentUri(tripleImageView1, imageUri1)
+                setImageFromContentUri(tripleImageView2, imageUri2)
+                setImageFromContentUri(tripleImageView3, imageUri3)
+
+                tripleImageViewLayout.animate()
+                    .alpha(1f)
+                    .setDuration(animationDuration / 3)
+                    .withEndAction {
+                        // Assuming you have URIs or resource IDs for your images
+
+                        tripleImageView1.animate()
+                            .translationX(0f)
+                            .translationY(0f)
+                            .setDuration(animationDuration / 3)
+                            .withEndAction {
+                                tripleImageView2.animate()
+                                    .translationX(0f)
+                                    .translationY(0f)
+                                    .setDuration(animationDuration / 3)
+                                    .withEndAction {
+                                        tripleImageView3.animate()
+                                            .translationX(0f)
+                                            .translationY(0f)
+                                            .setDuration(animationDuration / 3)
+                                            .withEndAction {
+                                                tripleImageViewLayout.animate()
+                                                    .alpha(0f)
+                                                    .setDuration(coverRevealDuration)
+                                                    .withEndAction {
+                                                        //next image animation
+                                                        showNextImage()
+                                                    }
+                                                    .start()
+                                            }.start()
+                                    }.start()
+                            }.start()
+                    }
+                    .start()
+            }
     }
 }

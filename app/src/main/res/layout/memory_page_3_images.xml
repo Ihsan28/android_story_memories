@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?><!-- memory_page_3_images.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tripleImageViewLayout"
+    android:orientation="vertical"
+    android:backgroundTint="#001C1B1F"
+    android:alpha="0"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/tripleImageView1"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_image" />
 
     <ImageView
         android:id="@+id/tripleImageView2"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_image" />
 
     <ImageView
         android:id="@+id/tripleImageView3"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_image" />

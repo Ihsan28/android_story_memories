@@ -54,6 +54,10 @@
                 android:alpha="0.0"
                 android:scaleType="centerCrop" />
 
+            <include layout="@layout/memory_page_2_images" />
+
+            <include layout="@layout/memory_page_3_images"/>
+
             <!--cover imageview-->
             <ImageView
                 android:id="@+id/coverImageView"
@@ -76,16 +80,6 @@
                     android:alpha="0.0"
                     android:scaleType="centerCrop" />
             </LinearLayout>
-
-            <include
-                android:id="@+id/double_image_layout"
-                layout="@layout/memory_page_2_images"
-                android:visibility="gone" />
-
-            <include
-                android:id="@+id/triple_image_layout"
-                layout="@layout/memory_page_3_images"
-                android:visibility="gone" />
         </androidx.cardview.widget.CardView>
     </RelativeLayout>
 
