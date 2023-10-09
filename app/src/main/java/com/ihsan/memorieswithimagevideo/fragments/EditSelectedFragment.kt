@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.ihsan.memorieswithimagevideo.R
+import com.ihsan.memorieswithimagevideo.Utils.StartEndDecoration
 import com.ihsan.memorieswithimagevideo.adapter.EditViewPagerAdapter
 import com.ihsan.memorieswithimagevideo.adapter.MiniPreviewAdapter
 import com.ihsan.memorieswithimagevideo.data.Data
@@ -29,6 +30,7 @@ import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
 import com.ihsan.memorieswithimagevideo.data.MediaType
+import kotlin.math.abs
 
 private const val TAG = "EditSelectedFragment"
 
@@ -40,7 +42,6 @@ class EditSelectedFragment : Fragment() {
 
     private lateinit var pickMediaContract: ActivityResultLauncher<Intent>
     private lateinit var currentContentUri: Uri
-
 
     /*
             private fun videoCropper(input: String, output: String, startPos: String, endPos: String) {
@@ -150,11 +151,19 @@ class EditSelectedFragment : Fragment() {
 
         // Set up the mini preview RecyclerView with the miniPreviewAdapter
         miniPreviewAdapter = MiniPreviewAdapter(mediaItems)
+        miniPreviewRecyclerView.addItemDecoration(StartEndDecoration(400))
 
         val layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         miniPreviewRecyclerView.layoutManager = layoutManager
         miniPreviewRecyclerView.adapter = miniPreviewAdapter
+
+        miniPreviewRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                scaleCenteredItem()
+            }
+        })
 
         // Add an item click listener to the mini preview RecyclerView
         miniPreviewAdapter.setOnItemClickListener { position ->
@@ -163,7 +172,6 @@ class EditSelectedFragment : Fragment() {
             currentIndex = position
             scrollMiniPreviewToCenteredPosition(position)
         }
-
 
         addButton.setOnClickListener {
             pickMediaContent()
@@ -357,6 +365,18 @@ class EditSelectedFragment : Fragment() {
             }
         }
         return RecyclerView.NO_POSITION // Not found
+    }
+
+    private fun scaleCenteredItem() {
+        val center = miniPreviewRecyclerView.width / 2f
+        for (i in 0 until miniPreviewRecyclerView.childCount) {
+            val child = miniPreviewRecyclerView.getChildAt(i)
+            val childMidpoint = (child.left + child.right) / 2f
+            val distanceFromCenter = abs(center - childMidpoint)
+            val scale = 1 - (distanceFromCenter / center)
+            child.scaleX = scale
+            child.scaleY = scale
+        }
     }
 
     private fun scrollMiniPreviewToCenteredPosition(centeredPosition: Int) {
