@@ -12,6 +12,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
@@ -46,7 +48,7 @@ import com.ihsan.memorieswithimagevideo.data.MediaType
 import com.ihsan.memorieswithimagevideo.databinding.FragmentMemoriesBinding
 import jp.wasabeef.transformers.glide.BlurTransformation
 
-class MemoriesFragment : Fragment() {
+class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private val TAG = "MemoriesFragment"
     private lateinit var binding: FragmentMemoriesBinding
 
@@ -54,7 +56,12 @@ class MemoriesFragment : Fragment() {
     private lateinit var pickImageButton: Button
     private lateinit var editButton: Button
     private lateinit var exportButton: Button
+    private lateinit var backgroundAudioMediaPlayer: MediaPlayer
+
+    //surface view for recording
     private lateinit var mediaPlayer: MediaPlayer
+    private lateinit var surfaceView: SurfaceView
+    private lateinit var surfaceHolder: SurfaceHolder
 
     //pick image launcher contract for image picker intent
     private val pickMediaContract: ActivityResultLauncher<Intent> = registerPickMediaContract()
@@ -108,6 +115,10 @@ class MemoriesFragment : Fragment() {
         checkPermissions()
         cardView = view.findViewById(R.id.cardViewAnimationRoot)
 
+        surfaceView = view.findViewById(R.id.surfaceView)
+        surfaceHolder = surfaceView.holder
+        surfaceHolder.addCallback(this)
+
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
         collageImageView = view.findViewById(R.id.collageImageView)
@@ -141,17 +152,17 @@ class MemoriesFragment : Fragment() {
 
         initRecording()
         // Initialize MediaPlayer
-        mediaPlayer = MediaPlayer.create(requireContext(), R.raw.aylex)
-        mediaPlayer.isLooping = true
+        backgroundAudioMediaPlayer = MediaPlayer.create(requireContext(), R.raw.aylex)
+        backgroundAudioMediaPlayer.isLooping = true
 
-        mediaPlayer.setOnCompletionListener {
+        backgroundAudioMediaPlayer.setOnCompletionListener {
             // Animation has ended, stop the audio
-            mediaPlayer.stop()
+            backgroundAudioMediaPlayer.stop()
         }
 
         if (contentUris.value!!.isNotEmpty()) {
             currentIndex = 0
-            mediaPlayer.start()
+            backgroundAudioMediaPlayer.start()
             //callViewPagerAdapter()
         }
 
@@ -174,12 +185,37 @@ class MemoriesFragment : Fragment() {
         }
     }
 
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        /*mediaPlayer = MediaPlayer().apply {
+            setDataSource("YOUR_VIDEO_URL")
+            setDisplay(surfaceHolder)
+            prepareAsync()
+            setOnPreparedListener {
+                start()
+            }
+        }*/
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        // Handle surface changed if needed
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        mediaPlayer.stop()
+        mediaPlayer.release()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer.release()
+    }
+
     private fun registerPickMediaContract(): ActivityResultLauncher<Intent> {
         return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
                 val clipData = result.data!!.clipData
                 contentUris.value!!.clear()
-                mediaPlayer.start()
+                backgroundAudioMediaPlayer.start()
                 if (clipData != null) {
                     for (i in 0 until clipData.itemCount) {
                         val mediaUri = clipData.getItemAt(i).uri
@@ -281,7 +317,7 @@ class MemoriesFragment : Fragment() {
             override fun onExportReady() {
                 Log.d(TAG, "onExportReady")
                 exportButton.visibility = View.VISIBLE
-                mediaPlayer.stop()
+                backgroundAudioMediaPlayer.stop()
             }
 
             override fun onExportStarted() {
@@ -326,14 +362,16 @@ class MemoriesFragment : Fragment() {
 
             if (Data.mediaItems[currentIndex].second == MediaType.VIDEO) {
                 Toast.makeText(requireContext(), "video", Toast.LENGTH_SHORT).show()
-                setVideoViewShapeWithPosition()
+                //setVideoViewShapeWithPosition()
+                setSurfaceViewShapeWithPosition()
                 return
             }
 
-            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
+            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
 
             if (animations.size <= i) {
                 recordAnimation.stopRecordingUsingFFMPEG()
+                resetAllViews()
                 return
             }
             /*if (contentUris.value!!.size-1 > currentIndex) {
@@ -371,17 +409,16 @@ class MemoriesFragment : Fragment() {
                 }
 
                 "8" -> {
-                    transitionWithScaleUpWithMove()
+                    transitionWithScaleDownCollage()
                 }
-
 
                 "9" -> {
                     transitionWithCollage()
                 }
 
-                "10" -> {
-                    transitionWithScaleDownCollage()
-                }
+                /*"10" -> {
+                    transitionWithScaleUpWithMove()
+                }*/
 
                 else -> {
                     Toast.makeText(requireContext(), "No animation", Toast.LENGTH_SHORT).show()
@@ -396,13 +433,36 @@ class MemoriesFragment : Fragment() {
         return currentContentUri
     }
 
+    private fun resetAllViews(){
+        resetImageViewShapeWithPosition(coverImageView)
+        resetImageViewShapeWithPosition(currentImageView,1f)
+
+        resetImageViewShapeWithPosition(collageImageView)
+        resetImageViewShapeWithPosition(collageImageView_1)
+        resetImageViewShapeWithPosition(collageImageView_2)
+        resetImageViewShapeWithPosition(collageImageView_3)
+
+        resetImageViewShapeWithPosition(doubleImageView1)
+        resetImageViewShapeWithPosition(doubleImageView2)
+
+        resetImageViewShapeWithPosition(tripleImageView1)
+        resetImageViewShapeWithPosition(tripleImageView2)
+        resetImageViewShapeWithPosition(tripleImageView3)
+    }
+
+    private fun resetImageViewShapeWithPosition(imageView: ImageView, alpha: Float = 0f) {
+        imageView.alpha = alpha
+        imageView.setImageURI(null)
+        setImageViewShapeWithPosition(imageView)
+    }
+
     private fun setImageViewShapeWithPosition(
         imageView: ImageView,
         scaleX: Float = 1f,
         scaleY: Float = 1f,
         translationX: Float = 0f,
         translationY: Float = 0f,
-        rotation: Float = 0f
+        rotation: Float = 0f,
     ) {
         imageView.scaleX = scaleX
         imageView.scaleY = scaleY
@@ -420,20 +480,42 @@ class MemoriesFragment : Fragment() {
                     Data.mediaItems[currentIndex].first,
                     videoView.duration.toLong()
                 )
-            videoView.alpha = 1f
-            currentImageView.alpha = 0f
-            coverImageView.alpha = 0f
-            currentImageView.setImageURI(null)
+            videoView.animate().alpha(1f).setDuration(0).start()
+            coverImageView.animate().alpha(0f).setDuration(0).start()
+
             coverImageView.setImageURI(lastFrame?.let { it1 -> Uri.parse(it1.toString()) })
             videoView.start()
         }
 
         //on video completion
         videoView.setOnCompletionListener {
-            videoView.alpha = 0f
-            coverImageView.alpha = 1f
-            currentImageView.alpha = 1f
+            videoView.animate().alpha(0f).setDuration(animationDuration).start()
             showNextImage()
+        }
+    }
+    private fun setSurfaceViewShapeWithPosition() {
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(requireContext(), currentContentUri)
+            setDisplay(surfaceHolder)
+            //prepare()
+            prepareAsync()
+            setOnPreparedListener {
+                val lastFrame =
+                    retrieveFrameFromVideo(
+                        Data.mediaItems[currentIndex].first,
+                        videoView.duration.toLong()
+                    )
+                surfaceView.animate().alpha(1f).setDuration(0).start()
+
+                currentImageView.setImageURI(lastFrame?.let { it1 -> Uri.parse(it1.toString()) })
+
+                //player start
+                start()
+            }
+            setOnCompletionListener {
+                surfaceView.animate().alpha(0f).setDuration(animationDuration).start()
+                showNextImage()
+            }
         }
     }
 
@@ -458,23 +540,24 @@ class MemoriesFragment : Fragment() {
             .into(imageView)
     }
 
+    //image animations
     private fun transitionWithScaleUp() {
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
 
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.coverRevealDuration)
+            .setDuration(coverRevealDuration)
             .withEndAction {
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 currentImageView.animate().scaleX(1.15f).scaleY(1.15f)
-                    .setDuration(Data.animationDuration)
+                    .setDuration(animationDuration)
                     .withEndAction {
                         // Show the next image
                         showNextImage()
@@ -492,7 +575,7 @@ class MemoriesFragment : Fragment() {
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.coverRevealDuration)
+            .setDuration(coverRevealDuration)
             .withEndAction {
 
                 //reset current
@@ -500,12 +583,13 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
+
                 currentImageView.animate()
                     .scaleX(2f)
                     .scaleY(2f)
                     .translationX(-screenWidth / 2.2f)
-                    .setDuration(Data.animationDuration * 2)
+                    .setDuration(animationDuration * 2)
                     .withEndAction {
 
                         //second transition
@@ -513,15 +597,15 @@ class MemoriesFragment : Fragment() {
                         setImageFromContentUri(coverImageView, nextImageUri)
 
                         coverImageView.animate().alpha(1f)
-                            .setDuration(Data.coverRevealDuration)
+                            .setDuration(coverRevealDuration)
                             .withEndAction {
                                 setImageFromContentUri(currentImageView, nextImageUri)
 
                                 //reset cover shape
-                                coverImageView.alpha = 0f
+                                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                                 currentImageView.animate().scaleX(1f).scaleY(1f).translationX(0f)
-                                    .setDuration(Data.animationDuration * 2)
+                                    .setDuration(animationDuration)
                                     .withEndAction {
                                         //show next image
                                         showNextImage()
@@ -544,7 +628,7 @@ class MemoriesFragment : Fragment() {
 
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.coverRevealDuration)
+            .setDuration(coverRevealDuration)
             .withEndAction {
 
                 //reset current
@@ -557,7 +641,7 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
                 //set for next image
                 setImageViewShapeWithPosition(
                     coverImageView,
@@ -568,23 +652,23 @@ class MemoriesFragment : Fragment() {
 
                 currentImageView.animate()
                     .translationX(translationXRight)
-                    .setDuration(Data.animationDuration)
+                    .setDuration(animationDuration)
                     .withEndAction {
                         val nextImageUri = nextImageUri()
                         //second transition
                         setImageFromContentUri(coverImageView, nextImageUri)
                         coverImageView.animate().alpha(1f)
-                            .setDuration(Data.coverRevealDuration)
+                            .setDuration(coverRevealDuration)
                             .withEndAction {
                                 setImageFromContentUri(currentImageView, nextImageUri)
 
                                 //reset cover shape
-                                coverImageView.alpha = 0f
+                                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                                 currentImageView.animate()
                                     .scaleX(1f).scaleY(1f)
                                     .translationX(0f)
-                                    .setDuration(Data.animationDuration)
+                                    .setDuration(animationDuration)
                                     .withEndAction {
                                         //show next image
                                         showNextImage()
@@ -606,7 +690,7 @@ class MemoriesFragment : Fragment() {
         setImageFromContentUri(coverImageView, currentContentUri)
 
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.animationDuration)
+            .setDuration(animationDuration)
             .withEndAction {
 
                 //reset current
@@ -614,12 +698,12 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
                 // Start the animation to scale down the currentImageView
                 currentImageView.animate()
                     .scaleX(1f)
                     .scaleY(1f)
-                    .setDuration(Data.animationDuration)
+                    .setDuration(animationDuration)
                     .withEndAction {
                         // Show the next image
                         showNextImage()
@@ -635,7 +719,7 @@ class MemoriesFragment : Fragment() {
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.animationDuration)
+            .setDuration(animationDuration)
             .withEndAction {
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
@@ -655,7 +739,7 @@ class MemoriesFragment : Fragment() {
 
                 // show current image with blur
                 coverImageView.animate().alpha(0f)
-                    .setDuration(Data.animationDuration)
+                    .setDuration(animationDuration)
                     .withEndAction {
                         showNextImage()
                     }
@@ -670,7 +754,7 @@ class MemoriesFragment : Fragment() {
         setImageViewShapeWithPosition(coverImageView, 2f, 2f)
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.animationDuration)
+            .setDuration(animationDuration)
             .withEndAction {
 
                 //set current
@@ -678,14 +762,14 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 currentImageView.animate()
                     .scaleX(1f).scaleY(1f)
-                    .setDuration(Data.animationDuration / 2)
+                    .setDuration(animationDuration / 2)
                     .withEndAction {
                         currentImageView.animate().translationX(Data.screenWidth)
-                            .setDuration(Data.animationDuration)
+                            .setDuration(animationDuration)
                             .start()
                         //show next image
                         showNextImage()
@@ -704,7 +788,7 @@ class MemoriesFragment : Fragment() {
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.coverRevealDuration)
+            .setDuration(coverRevealDuration)
             .withEndAction {
                 //reset
                 setImageViewShapeWithPosition(collageImageView)
@@ -714,7 +798,7 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 setImageFromContentUri(collageImageView, nextImageUri)
                 setImageFromContentUri(collageImageView_1, previousImageUri)
@@ -734,25 +818,25 @@ class MemoriesFragment : Fragment() {
                     .scaleX(0.5f).scaleY(0.5f)
                     .translationX(Data.screenWidth / -4)
                     .translationY(Data.screenWidth / -4)
-                    .setDuration(Data.animationDuration / 2).withEndAction {
+                    .setDuration(animationDuration / 2).withEndAction {
 
                         //transition enter and scale down to position
                         collageImageView.animate().alpha(1f)
                             .scaleX(0.5f).scaleY(0.5f)
                             .translationX(0f)
-                            .setDuration(Data.animationDuration / 3).withEndAction {
+                            .setDuration(animationDuration / 3).withEndAction {
 
                                 //transition enter and scale down to position
                                 collageImageView_1.animate().alpha(1f)
                                     .scaleX(0.5f).scaleY(0.5f)
                                     .translationX(Data.screenWidth / 4)
                                     .translationY(Data.screenWidth / 4)
-                                    .setDuration(Data.animationDuration / 4).withEndAction {
+                                    .setDuration(animationDuration / 4).withEndAction {
                                         collageImageView.animate().alpha(0f)
-                                            .setDuration(Data.coverRevealDuration)
+                                            .setDuration(coverRevealDuration)
                                             .start()
                                         collageImageView_1.animate().alpha(0f)
-                                            .setDuration(Data.coverRevealDuration)
+                                            .setDuration(coverRevealDuration)
                                             .start()
                                         //show next image
                                         showNextImage()
@@ -777,14 +861,14 @@ class MemoriesFragment : Fragment() {
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
         coverImageView.animate().alpha(1f)
-            .setDuration(Data.animationDuration)
+            .setDuration(animationDuration)
             .withEndAction {
                 setImageFromContentUri(currentImageView, currentContentUri)
                 //reset current
                 setImageViewShapeWithPosition(currentImageView)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 setImageFromContentUri(collageImageView, collegeImageUri)
                 setImageFromContentUri(collageImageView_1, collegeImageUri_1)
@@ -796,33 +880,33 @@ class MemoriesFragment : Fragment() {
                     .translationX(Data.screenWidth / -4)
                     .translationY(Data.screenHeight / -4)
                     .rotation(-25f)
-                    .setDuration(Data.animationDuration)
+                    .setDuration(animationDuration)
                     .withEndAction {
 
                         collageImageView.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
                             .translationX(Data.screenWidth / 4)
                             .translationY(Data.screenHeight / 4)
                             .rotation(25f)
-                            .setDuration(Data.animationDuration)
+                            .setDuration(animationDuration)
                             .withEndAction {
 
                                 collageImageView_1.animate().alpha(1f).scaleX(0.3f).scaleY(0.3f)
                                     .translationX(Data.screenWidth / 5)
                                     .translationY(Data.screenHeight / -5)
                                     .rotation(25f)
-                                    .setDuration(Data.animationDuration)
+                                    .setDuration(animationDuration)
                                     .withEndAction {
                                         collageImageView_2.animate().alpha(1f).scaleX(0.3f)
                                             .scaleY(0.3f)
                                             .translationX(Data.screenWidth / -5)
                                             .translationY(Data.screenHeight / 5)
                                             .rotation(-25f)
-                                            .setDuration(Data.animationDuration)
+                                            .setDuration(animationDuration)
                                             .withEndAction {
 
                                                 collageImageView_3.animate().alpha(1f)
                                                     .scaleX(0.3f).scaleY(0.3f)
-                                                    .setDuration(Data.animationDuration)
+                                                    .setDuration(animationDuration)
                                                     .withEndAction {
 
                                                         //stay delay
@@ -830,7 +914,7 @@ class MemoriesFragment : Fragment() {
 
                                                         //reset college Image view
                                                         collageImageView.animate().alpha(0f)
-                                                            .setDuration(Data.coverRevealDuration)
+                                                            .setDuration(coverRevealDuration)
                                                             .withEndAction {
                                                                 setImageViewShapeWithPosition(
                                                                     collageImageView,
@@ -842,7 +926,7 @@ class MemoriesFragment : Fragment() {
                                                             }
                                                             .start()
                                                         collageImageView_1.animate().alpha(0f)
-                                                            .setDuration(Data.coverRevealDuration)
+                                                            .setDuration(coverRevealDuration)
                                                             .withEndAction {
                                                                 setImageViewShapeWithPosition(
                                                                     collageImageView_1,
@@ -854,7 +938,7 @@ class MemoriesFragment : Fragment() {
                                                             }
                                                             .start()
                                                         collageImageView_2.animate().alpha(0f)
-                                                            .setDuration(Data.coverRevealDuration)
+                                                            .setDuration(coverRevealDuration)
                                                             .withEndAction {
                                                                 setImageViewShapeWithPosition(
                                                                     collageImageView_2,
@@ -866,7 +950,7 @@ class MemoriesFragment : Fragment() {
                                                             }
                                                             .start()
                                                         collageImageView_3.animate().alpha(0f)
-                                                            .setDuration(Data.coverRevealDuration)
+                                                            .setDuration(coverRevealDuration)
                                                             .withEndAction {
                                                                 setImageViewShapeWithPosition(
                                                                     collageImageView_3,
@@ -916,7 +1000,7 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 setImageViewShapeWithPosition(doubleImageView1, translationX = -screenWidth)
                 setImageViewShapeWithPosition(doubleImageView2, translationX = screenWidth)
@@ -976,7 +1060,7 @@ class MemoriesFragment : Fragment() {
                 setImageFromContentUri(currentImageView, currentContentUri)
 
                 // show current image
-                coverImageView.alpha = 0f
+                coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 setImageViewShapeWithPosition(tripleImageView1, translationX = screenWidth, translationY = screenHeight)
                 setImageViewShapeWithPosition(tripleImageView2, translationX = screenWidth, translationY = screenHeight)

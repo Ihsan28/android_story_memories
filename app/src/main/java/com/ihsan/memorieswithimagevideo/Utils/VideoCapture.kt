@@ -198,6 +198,8 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
         file.outputStream().use { outputStream ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
         }
+
+        bitmap.recycle()
         return file.path
     }
 
@@ -208,7 +210,8 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
 
     private fun captureView(view: CardView): Bitmap {
         val bitmap = reusableBitmap ?: Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = this.canvas ?: Canvas(bitmap)
+        val canvas = this.canvas ?: Canvas()
+        canvas.setBitmap(bitmap) // Set the bitmap to the canvas
         view.draw(canvas)
         return bitmap
     }

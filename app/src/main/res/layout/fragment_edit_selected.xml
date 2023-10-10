@@ -17,6 +17,16 @@
             android:id="@+id/viewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+        <Button
+            android:id="@+id/doneButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:textStyle="bold"
+            android:layout_margin="5dp"
+            android:backgroundTint="#4872F497"
+            android:text="@string/done" />
 
         <Button
             android:id="@+id/addButton"

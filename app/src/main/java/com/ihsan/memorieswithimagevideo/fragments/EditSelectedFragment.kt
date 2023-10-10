@@ -121,11 +121,17 @@ class EditSelectedFragment : Fragment() {
         val addButton = view.findViewById<Button>(R.id.addButton)
         val removeButton = view.findViewById<Button>(R.id.removeButton)
         val editButton = view.findViewById<Button>(R.id.editButton)
+        val doneButton = view.findViewById<Button>(R.id.doneButton)
         pickMediaContract = pickMediaContract()
 
         //initialize()
         if (contentUris.value != null && contentUris.value!!.isNotEmpty()) {
             currentContentUri = contentUris.value!![currentIndex]
+        }
+
+        if (mediaItems.isNotEmpty()) {
+            //val centeredPosition = calculateCenteredPosition()
+            currentContentUri =  mediaItems[currentIndex].first
         }
 
         // Register a callback to be invoked when the ViewPager2 changes its current item
@@ -144,7 +150,7 @@ class EditSelectedFragment : Fragment() {
         }
 
         // Set up the ViewPager2 with the editViewPagerAdapter
-        editViewPagerAdapter = contentUris.value?.let { EditViewPagerAdapter(it) }!!
+        editViewPagerAdapter = EditViewPagerAdapter(mediaItems)
 
         //editViewPagerAdapter= EditViewPagerAdapter(mediaItems.map { it.first })
         viewPager.adapter = editViewPagerAdapter
@@ -171,6 +177,11 @@ class EditSelectedFragment : Fragment() {
             viewPager.currentItem = position
             currentIndex = position
             scrollMiniPreviewToCenteredPosition(position)
+        }
+
+        doneButton.setOnClickListener {
+            val action = EditSelectedFragmentDirections.actionEditSelectedFragmentToMemoriesFragment()
+            view.findNavController().navigate(action)
         }
 
         addButton.setOnClickListener {
@@ -352,7 +363,7 @@ class EditSelectedFragment : Fragment() {
     }
 
     private fun callViewPagerAdapter() {
-        editViewPagerAdapter = contentUris.value?.let { EditViewPagerAdapter(it) }!!
+        editViewPagerAdapter = EditViewPagerAdapter(mediaItems)
         viewPager.adapter = editViewPagerAdapter
     }
 

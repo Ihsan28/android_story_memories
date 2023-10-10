@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import android.widget.Toast
 import android.widget.VideoView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -47,7 +49,7 @@ class VideoEditingFragment : Fragment() {
     val REQUEST_PERMISSION_CODE = 1000
     private lateinit var videoView: VideoView
     private lateinit var videoUri: Uri
-    private val output = "/storage/emulated/0/Download/output.mp4"
+    private var output = "/storage/emulated/0/Download/output.mp4"
     private lateinit var rangeSeekBar: RangeSeekBar
     private lateinit var progressBar: ProgressBar
     private lateinit var doneButton: Button
@@ -137,9 +139,15 @@ class VideoEditingFragment : Fragment() {
         }
     }
 
+    private fun getOutputFilePath(): String {
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        return "${dir.absolutePath}/animatedVideoEdited_${System.currentTimeMillis()}.mp4"
+    }
+
     private fun navigateToHomeFragment() {
-        contentUris.value?.set(currentIndex, Uri.parse(output))
-        mediaItems[currentIndex] = Pair(Uri.parse(output),MediaType.VIDEO)
+        val videoUri = File(output).toUri()
+        contentUris.value?.set(currentIndex, videoUri)
+        mediaItems[currentIndex] = Pair(videoUri,MediaType.VIDEO)
 
         //navigate with args
         val action =
@@ -149,6 +157,7 @@ class VideoEditingFragment : Fragment() {
 
     private fun executeFFmpegCommandToTrimVideo() {
         Toast.makeText(requireContext(), "Done", Toast.LENGTH_SHORT).show()
+        output=getOutputFilePath()
 
         val command = arrayOf(
             "-y",

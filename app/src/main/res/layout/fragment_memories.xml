@@ -66,23 +66,37 @@
                 android:alpha="0.0"
                 android:scaleType="centerCrop" />
 
+            <VideoView
+                android:id="@+id/videoView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="@color/colorPrimaryDark"
+                android:alpha="0.0"
+                android:scaleType="centerCrop" />
             <!--video view-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center">
 
-                <VideoView
-                    android:id="@+id/videoView"
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <SurfaceView
+                    android:id="@+id/surfaceView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:backgroundTint="@color/colorPrimaryDark"
                     android:alpha="0.0"
-                    android:scaleType="centerCrop" />
-            </LinearLayout>
+                    android:layout_centerInParent="true"/>
+            </RelativeLayout>
         </androidx.cardview.widget.CardView>
     </RelativeLayout>
 
+    <!--visibility gone to remove this button-->
     <Button
         android:id="@+id/pickImageButton"
         android:backgroundTint="#1D1C1B1F"
@@ -91,6 +105,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="5dp"
+        android:visibility="gone"
         android:text="@string/pick_image" />
 
     <Button

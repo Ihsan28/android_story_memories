@@ -19,7 +19,7 @@ class Data {
 
         //var contentUris = mutableListOf<Uri>()
         var contentUris = MutableLiveData(mutableListOf<Uri>())
-        var mediaItems: MutableList<Pair<Uri, MediaType>> = mutableListOf()
+        var mediaItems = mutableListOf<Pair<Uri, MediaType>>()
         var currentIndex = 0
 
         var animationDuration = 3000L
