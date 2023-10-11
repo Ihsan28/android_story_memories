@@ -16,8 +16,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -42,11 +40,13 @@ import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.coverRevealDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
+import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenHeight
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.screenWidth
 import com.ihsan.memorieswithimagevideo.data.MediaType
 import com.ihsan.memorieswithimagevideo.databinding.FragmentMemoriesBinding
 import jp.wasabeef.transformers.glide.BlurTransformation
+import java.io.IOException
 
 class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private val TAG = "MemoriesFragment"
@@ -58,8 +58,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private lateinit var exportButton: Button
     private lateinit var backgroundAudioMediaPlayer: MediaPlayer
 
-    //surface view for recording
-    private lateinit var mediaPlayer: MediaPlayer
+    //surface view for video playing
+    private var mediaPlayer: MediaPlayer? = MediaPlayer()
+    private var isInErrorState = false
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
 
@@ -94,6 +95,8 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private lateinit var tripleImageView3: ImageView
     private lateinit var videoView: VideoView
     private var currentContentUri: Uri = Uri.EMPTY
+
+    //recoding property
     private lateinit var recordAnimation: VideoCapture
     private var i = 0
     private lateinit var progressBar: NumberProgressBar
@@ -101,7 +104,7 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentMemoriesBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -160,10 +163,10 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
             backgroundAudioMediaPlayer.stop()
         }
 
-        if (contentUris.value!!.isNotEmpty()) {
+        if (mediaItems.isNotEmpty()) {
             currentIndex = 0
             backgroundAudioMediaPlayer.start()
-            //callViewPagerAdapter()
+            startAnimation()
         }
 
         pickImageButton.setOnClickListener {
@@ -179,20 +182,11 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         exportButton.setOnClickListener {
             exportVideoFFMPEG()
         }
-
-        if (contentUris.value!!.isNotEmpty()) {
-            startAnimation()
-        }
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         /*mediaPlayer = MediaPlayer().apply {
-            setDataSource("YOUR_VIDEO_URL")
             setDisplay(surfaceHolder)
-            prepareAsync()
-            setOnPreparedListener {
-                start()
-            }
         }*/
     }
 
@@ -201,13 +195,14 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        mediaPlayer.stop()
-        mediaPlayer.release()
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer.release()
+        mediaPlayer?.release()
+        backgroundAudioMediaPlayer.release()
     }
 
     private fun registerPickMediaContract(): ActivityResultLauncher<Intent> {
@@ -356,11 +351,11 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     private fun showNextImage() {
-        if (contentUris.value!!.isNotEmpty()) {
+        if (mediaItems.isNotEmpty()) {
             //Increment the index
             nextImageUri()
 
-            if (Data.mediaItems[currentIndex].second == MediaType.VIDEO) {
+            if (mediaItems[currentIndex].second == MediaType.VIDEO) {
                 Toast.makeText(requireContext(), "video", Toast.LENGTH_SHORT).show()
                 //setVideoViewShapeWithPosition()
                 setSurfaceViewShapeWithPosition()
@@ -428,14 +423,14 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     private fun nextImageUri(): Uri {
-        currentIndex = (currentIndex + 1) % contentUris.value!!.size
-        currentContentUri = contentUris.value!![currentIndex]
+        currentIndex = (currentIndex + 1) % mediaItems.size
+        currentContentUri = mediaItems[currentIndex].first
         return currentContentUri
     }
 
-    private fun resetAllViews(){
+    private fun resetAllViews() {
         resetImageViewShapeWithPosition(coverImageView)
-        resetImageViewShapeWithPosition(currentImageView,1f)
+        resetImageViewShapeWithPosition(currentImageView, 1f)
 
         resetImageViewShapeWithPosition(collageImageView)
         resetImageViewShapeWithPosition(collageImageView_1)
@@ -471,6 +466,7 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         imageView.rotation = rotation
     }
 
+
     private fun setVideoViewShapeWithPosition() {
         videoView.setVideoURI(currentContentUri)
 
@@ -493,31 +489,54 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
             showNextImage()
         }
     }
+
     private fun setSurfaceViewShapeWithPosition() {
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(requireContext(), currentContentUri)
-            setDisplay(surfaceHolder)
-            //prepare()
-            prepareAsync()
-            setOnPreparedListener {
-                val lastFrame =
-                    retrieveFrameFromVideo(
-                        Data.mediaItems[currentIndex].first,
+        try {
+            mediaPlayer = null
+            //need to release the player after playing
+            mediaPlayer = MediaPlayer().apply {
+                setDisplay(surfaceHolder)
+            }.apply {
+                //isInErrorState = false  // Clear the error state
+
+                setDataSource(requireContext(), currentContentUri)
+                //setDisplay(surfaceHolder)
+                prepare()
+
+                setOnPreparedListener {
+                    val lastFrame = retrieveFrameFromVideo(
+                        mediaItems[currentIndex].first,
                         videoView.duration.toLong()
                     )
-                surfaceView.animate().alpha(1f).setDuration(0).start()
-
-                currentImageView.setImageURI(lastFrame?.let { it1 -> Uri.parse(it1.toString()) })
-
-                //player start
-                start()
+                    surfaceView.animate().alpha(1f).setDuration(0).start()
+                    currentImageView.setImageURI(lastFrame?.let { Uri.parse(it.toString()) })
+                    start()
+                }
+                setOnCompletionListener {
+                    it.stop()
+                    it.reset()
+                    it.release()
+                    surfaceView.animate().alpha(0f).setDuration(animationDuration).start()
+                    showNextImage()
+                }
+                setOnErrorListener { mp, what, extra ->
+                    isInErrorState = true  // Set the flag when an error occurs
+                    Log.e(
+                        TAG,
+                        "MediaPlayer Error: what=$what, extra=$extra isPlaying=${mp.isPlaying}"
+                    )
+                    true  // Return true if the error was handled
+                }
             }
-            setOnCompletionListener {
-                surfaceView.animate().alpha(0f).setDuration(animationDuration).start()
-                showNextImage()
-            }
+        } catch (e: IllegalStateException) {
+            // Log or handle the exception
+            Log.e(TAG, "IllegalStateException occurred while trying to set data source", e)
+        } catch (e: IOException) {
+            // Log or handle the exception
+            Log.e(TAG, "IOException occurred while trying to set data source", e)
         }
     }
+
 
     private fun retrieveFrameFromVideo(videoUri: Uri, timeInMillis: Long): Bitmap? {
         val retriever = MediaMetadataRetriever()
@@ -853,9 +872,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private fun transitionWithCollage() {
         val currentContentUri = currentContentUri
         val collegeImageUri = nextImageUri()
-        val collegeImageUri_1 = nextImageUri()
-        val collegeImageUri_2 = nextImageUri()
-        val collegeImageUri_3 = nextImageUri()
+        val collegeImageUri1 = nextImageUri()
+        val collegeImageUri2 = nextImageUri()
+        val collegeImageUri3 = nextImageUri()
 
         //reset cover shape
         setImageViewShapeWithPosition(coverImageView)
@@ -871,9 +890,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
                 coverImageView.animate().alpha(0f).setDuration(0).start()
 
                 setImageFromContentUri(collageImageView, collegeImageUri)
-                setImageFromContentUri(collageImageView_1, collegeImageUri_1)
-                setImageFromContentUri(collageImageView_2, collegeImageUri_2)
-                setImageFromContentUri(collageImageView_3, collegeImageUri_3)
+                setImageFromContentUri(collageImageView_1, collegeImageUri1)
+                setImageFromContentUri(collageImageView_2, collegeImageUri2)
+                setImageFromContentUri(collageImageView_3, collegeImageUri3)
 
                 //hide previous image view which is blurred
                 currentImageView.animate().scaleX(0.3f).scaleY(0.3f)
@@ -983,12 +1002,6 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         val imageUri1 = nextImageUri()
         val imageUri2 = nextImageUri()
 
-        // Load animations
-        val slideInLeft: Animation =
-            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_left)
-        val slideInRight: Animation =
-            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_right)
-
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
 
@@ -1045,10 +1058,6 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         val imageUri2 = nextImageUri()
         val imageUri3 = nextImageUri()
 
-        // Load animations
-        val slideInBottom: Animation =
-            AnimationUtils.loadAnimation(requireContext(), R.anim.slide_in_from_bottom)
-
         setImageViewShapeWithPosition(coverImageView)
         setImageFromContentUri(coverImageView, currentContentUri)
 
@@ -1062,9 +1071,21 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
                 // show current image
                 coverImageView.animate().alpha(0f).setDuration(0).start()
 
-                setImageViewShapeWithPosition(tripleImageView1, translationX = screenWidth, translationY = screenHeight)
-                setImageViewShapeWithPosition(tripleImageView2, translationX = screenWidth, translationY = screenHeight)
-                setImageViewShapeWithPosition(tripleImageView3, translationX = screenWidth, translationY = screenHeight)
+                setImageViewShapeWithPosition(
+                    tripleImageView1,
+                    translationX = screenWidth,
+                    translationY = screenHeight
+                )
+                setImageViewShapeWithPosition(
+                    tripleImageView2,
+                    translationX = screenWidth,
+                    translationY = screenHeight
+                )
+                setImageViewShapeWithPosition(
+                    tripleImageView3,
+                    translationX = screenWidth,
+                    translationY = screenHeight
+                )
 
                 setImageFromContentUri(tripleImageView1, imageUri1)
                 setImageFromContentUri(tripleImageView2, imageUri2)
