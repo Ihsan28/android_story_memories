@@ -352,17 +352,16 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
 
     private fun showNextImage() {
         if (mediaItems.isNotEmpty()) {
-            Toast.makeText(requireContext(), i.toString(), Toast.LENGTH_SHORT).show()
-            if (1 == i) {
+            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
+            if (animations.size <=i) {
                 recordAnimation.stopRecordingUsingFFMPEG()
                 resetAllViews()
                 return
             }
             nextImageUri()
 
-            val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
+
             if (mediaItems[currentIndex].second == MediaType.VIDEO) {
-                Toast.makeText(requireContext(), "video", Toast.LENGTH_SHORT).show()
                 //setVideoViewShapeWithPosition()
                 setSurfaceViewShapeWithPosition()
                 return
