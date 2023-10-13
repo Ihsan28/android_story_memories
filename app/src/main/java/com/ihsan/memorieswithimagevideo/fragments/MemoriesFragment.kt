@@ -1,8 +1,7 @@
 package com.ihsan.memorieswithimagevideo.fragments
 
 import android.Manifest
-import android.app.Activity
-import android.content.Intent
+import android.app.Activity.RESULT_OK
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -21,7 +20,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import android.widget.VideoView
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
@@ -34,10 +32,10 @@ import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.request.RequestOptions
 import com.daimajia.numberprogressbar.NumberProgressBar
 import com.ihsan.memorieswithimagevideo.R
+import com.ihsan.memorieswithimagevideo.Utils.ScreenCapture
 import com.ihsan.memorieswithimagevideo.Utils.VideoCapture
 import com.ihsan.memorieswithimagevideo.data.Data
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.animationDuration
-import com.ihsan.memorieswithimagevideo.data.Data.Companion.contentUris
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.coverRevealDuration
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.currentIndex
 import com.ihsan.memorieswithimagevideo.data.Data.Companion.mediaItems
@@ -52,20 +50,29 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private val TAG = "MemoriesFragment"
     private lateinit var binding: FragmentMemoriesBinding
 
+    //screen recording properties
+    private lateinit var screenCapture: ScreenCapture
+
+    private val screenCaptureLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                screenCapture.startRecording(result.resultCode, result.data)
+            } else {
+                // Handle the user denying the permission...
+            }
+        }
+
+
     //private lateinit var viewPager2: ViewPager2
-    private lateinit var pickImageButton: Button
     private lateinit var editButton: Button
     private lateinit var exportButton: Button
     private lateinit var backgroundAudioMediaPlayer: MediaPlayer
 
     //surface view for video playing
-    private var mediaPlayer: MediaPlayer? = MediaPlayer()
+    private var surfaceViewMediaPlayer: MediaPlayer? = MediaPlayer()
     private var isInErrorState = false
     private lateinit var surfaceView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
-
-    //pick image launcher contract for image picker intent
-    private val pickMediaContract: ActivityResultLauncher<Intent> = registerPickMediaContract()
 
     //animation properties
     private val REQUEST_CODE_PERMISSIONS = 1001
@@ -122,6 +129,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         surfaceHolder = surfaceView.holder
         surfaceHolder.addCallback(this)
 
+        //assign to screen capture
+        screenCapture = ScreenCapture(requireActivity())
+
         coverImageView = view.findViewById(R.id.coverImageView)
         currentImageView = view.findViewById(R.id.currentImageView)
         collageImageView = view.findViewById(R.id.collageImageView)
@@ -151,12 +161,14 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         exportButton = view.findViewById(R.id.export)
         exportButton.visibility = View.INVISIBLE
 
-        pickImageButton = view.findViewById(R.id.pickImageButton)
-
+        //init recording using FFmpeg
         initRecording()
-        // Initialize MediaPlayer
+
+        // Initialize MediaPlayer for playing music as background audio
         backgroundAudioMediaPlayer = MediaPlayer.create(requireContext(), R.raw.aylex)
-        backgroundAudioMediaPlayer.isLooping = true
+        backgroundAudioMediaPlayer.apply {
+            isLooping = true
+        }
 
         backgroundAudioMediaPlayer.setOnCompletionListener {
             // Animation has ended, stop the audio
@@ -169,14 +181,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
             startAnimation()
         }
 
-        pickImageButton.setOnClickListener {
-            pickMediaContent()
-        }
-
         editButton.setOnClickListener {
             recordAnimation.stopRecordingUsingFFMPEG()
-            val action = MemoriesFragmentDirections.actionMemoriesFragmentToEditSelectedFragment()
-            findNavController().navigate(action)
+            navigateToEditFragment()
         }
 
         exportButton.setOnClickListener {
@@ -195,85 +202,47 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
+        surfaceViewMediaPlayer?.stop()
+        surfaceViewMediaPlayer?.release()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer?.release()
+        surfaceViewMediaPlayer?.release()
         backgroundAudioMediaPlayer.release()
     }
 
-    private fun registerPickMediaContract(): ActivityResultLauncher<Intent> {
-        return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                val clipData = result.data!!.clipData
-                contentUris.value!!.clear()
-                backgroundAudioMediaPlayer.start()
-                if (clipData != null) {
-                    for (i in 0 until clipData.itemCount) {
-                        val mediaUri = clipData.getItemAt(i).uri
-                        contentUris.value!!.add(mediaUri)
-                    }
-
-                } else {
-                    val mediaUri = result.data!!.data
-                    if (mediaUri != null) {
-                        contentUris.value!!.clear()
-                        contentUris.value!!.add(mediaUri)
-                    }
-                }
-
-                Data().mapContentUrisToMediaItems()
-                //callViewPagerAdapter()
-                startAnimation()
-            }
+    private fun startScreenRecording() {
+        screenCapture.initRecording { intent ->
+            screenCaptureLauncher.launch(intent)
         }
+    }
+
+    private fun stopScreenRecording() {
+        screenCapture.stopRecording()
+    }
+
+    private fun navigateToEditFragment() {
+        val action = MemoriesFragmentDirections.actionMemoriesFragmentToEditSelectedFragment()
+        findNavController().navigate(action)
     }
 
     private fun startAnimation() {
         progressBar.visibility = View.INVISIBLE
         exportButton.visibility = View.INVISIBLE
+
         currentIndex = 0
         i = 0
-        recordAnimation.stopRecordingUsingFFMPEG()
+
+        stopScreenRecording()
+        //recordAnimation.stopRecordingUsingFFMPEG()
+
         cardView.post {
             showNextImage()
-            recordAnimation.startRecordingFFMPEG()
+            //recordAnimation.startRecordingFFMPEG()
+            startScreenRecording()
         }
     }
-
-    private fun pickMediaContent() {
-        val pickImagesIntent = Intent(Intent.ACTION_PICK)
-        pickImagesIntent.type = "image/*"
-        pickImagesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-
-        val pickVideosIntent = Intent(Intent.ACTION_PICK)
-        pickVideosIntent.type = "video/*"
-        pickVideosIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-
-        val chooserIntent = Intent.createChooser(
-            pickImagesIntent,
-            "Select Images and Videos"
-        )
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickVideosIntent))
-
-        try {
-            pickMediaContract.launch(chooserIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle the exception, possibly by displaying an error message.
-        }
-    }
-
-    /*private fun callViewPagerAdapter() {
-        if (contentUris.value!!.isNotEmpty()) {
-            val tabMatchAdapter =
-                ViewPagerAdapter(childFragmentManager, lifecycle)
-            viewPager2.adapter = tabMatchAdapter
-        }
-    }*/
 
     private fun checkPermissions() {
         if (!allPermissionsGranted()) {
@@ -353,8 +322,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
     private fun showNextImage() {
         if (mediaItems.isNotEmpty()) {
             val animations = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
-            if (animations.size <=i) {
-                recordAnimation.stopRecordingUsingFFMPEG()
+            if (animations.size <= i) {
+                //recordAnimation.stopRecordingUsingFFMPEG()
+                stopScreenRecording()
                 resetAllViews()
                 return
             }
@@ -489,9 +459,9 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
 
     private fun setSurfaceViewShapeWithPosition() {
         try {
-            mediaPlayer = null
+            surfaceViewMediaPlayer = null
             //need to release the player after playing
-            mediaPlayer = MediaPlayer().apply {
+            surfaceViewMediaPlayer = MediaPlayer().apply {
                 setDisplay(surfaceHolder)
             }.apply {
                 //isInErrorState = false  // Clear the error state
@@ -534,12 +504,11 @@ class MemoriesFragment : Fragment(), SurfaceHolder.Callback {
         }
     }
 
-
     private fun retrieveFrameFromVideo(videoUri: Uri, timeInMillis: Long): Bitmap? {
         val retriever = MediaMetadataRetriever()
         retriever.setDataSource(videoUri.path)
 
-        // Retrieve a frame at the specified time (in microseconds)
+        // Retrieve a frame at  the specified time (in microseconds)
         val frame = retriever.getFrameAtTime(
             timeInMillis * 1000,
             MediaMetadataRetriever.OPTION_CLOSEST_SYNC

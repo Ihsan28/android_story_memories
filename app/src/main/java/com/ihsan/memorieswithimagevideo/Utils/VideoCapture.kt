@@ -203,9 +203,9 @@ class VideoCapture(private val cardView: CardView, private val recordingCallback
         return file.path
     }
 
-    private fun getOutputFilePath(): String {
+    private fun getOutputFilePath(prefix: String="animatedViewCapture_"): String {
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        return "${dir.absolutePath}/animatedViewCapture_${System.currentTimeMillis()}.mp4"
+        return "${dir.absolutePath}/$prefix${System.currentTimeMillis()}.mp4"
     }
 
     private fun captureView(view: CardView): Bitmap {
